@@ -98,19 +98,16 @@
     }
     
     .prose blockquote {
-        @apply relative border-none pl-0 text-center text-[1.375em] leading-snug font-semibold not-italic sm:text-[1.66667em] lg:-mx-24 xl:-mx-40;
+        @apply not-italic rounded-r-lg border-l-4 border-l-primary bg-primary/5 py-3 pl-5 pr-4 dark:border-l-primary-dark;
+        quotes: none;
     }
-    
-    .prose blockquote:before {
-        @apply bg-primary mx-auto block h-0.75 w-15;
-        content: '';
-        margin-bottom: 1.375em;
+
+    .prose blockquote p:first-of-type {
+        margin-top: 0;
     }
-    
-    .prose blockquote:after {
-        @apply bg-primary mx-auto block h-0.75 w-7.5;
-        content: '';
-        margin-top: 1.375em;
+
+    .prose blockquote p:last-of-type {
+        margin-bottom: 0;
     }
     
     article > figure > img {
