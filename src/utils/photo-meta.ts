@@ -1,15 +1,25 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import exifReader from 'exif-reader';
 import sharp from 'sharp';
 
 type RGB = { r: number; g: number; b: number };
+
+export type PhotoExif = {
+    model?: string;
+    focalLength?: string;
+    fNumber?: string;
+    exposureTime?: string;
+    iso?: string;
+};
 
 export type PhotoMeta = {
     /** 按钮渐变用的一对颜色，取不出时回退到站点默认的紫→青 */
     colors: [string, string];
     width: number;
     height: number;
+    exif: PhotoExif | null;
 };
 
 const FALLBACK_COLORS: [string, string] = ['#a855f7', '#22d3ee'];
@@ -82,6 +92,69 @@ function hslToHex(h: number, s: number, l: number) {
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
+// exif-reader v2 的标签值形态不统一（字符串/数字/带 description 的对象），做一层防御性取值
+function tagDesc(...candidates: unknown[]): string | undefined {
+    for (const tag of candidates) {
+        if (!tag) continue;
+        if (typeof tag === 'string' && tag.trim()) return tag.trim();
+        if (typeof tag === 'number') return String(tag);
+        if (typeof tag === 'object' && typeof (tag as { description?: unknown }).description === 'string') {
+            const desc = ((tag as { description: string }).description).trim();
+            if (desc) return desc;
+        }
+    }
+    return undefined;
+}
+
+function tagNumber(...candidates: unknown[]): number | undefined {
+    for (const tag of candidates) {
+        if (!tag) continue;
+        if (typeof tag === 'number') return tag;
+        const o = tag as Record<string, any>;
+        if (typeof o.rawValue === 'number') return o.rawValue;
+        if (typeof o.value === 'number') return o.value;
+        if (o.value && typeof o.value === 'object') {
+            const { numerator, denominator } = o.value as Record<string, unknown>;
+            if (typeof numerator === 'number' && typeof denominator === 'number' && denominator !== 0) {
+                return numerator / denominator;
+            }
+        }
+        if (typeof o.numerator === 'number' && typeof o.denominator === 'number' && o.denominator !== 0) {
+            return o.numerator / o.denominator;
+        }
+        if (typeof o.description === 'string') {
+            const n = parseFloat(o.description);
+            if (!Number.isNaN(n)) return n;
+        }
+    }
+    return undefined;
+}
+
+function parseExif(metadata: sharp.Metadata): PhotoExif | null {
+    if (!metadata.exif) return null;
+    try {
+        const ex = exifReader(metadata.exif) as Record<string, any>;
+        const photo = (ex?.Photo ?? {}) as Record<string, any>;
+        const image = (ex?.Image ?? {}) as Record<string, any>;
+
+        const model = tagDesc(image.Model);
+        // 优先 35mm 等效焦距（物理焦距对读者没有意义）
+        const focal = tagNumber(photo.FocalLengthIn35mmFilm) ?? tagNumber(photo.FocalLength, image.FocalLength);
+        const focalLength = focal ? `${Math.round(focal)}mm` : undefined;
+        const fNum = tagNumber(photo.FNumber, image.FNumber);
+        const fNumber = fNum ? `f/${fNum.toFixed(1)}` : undefined;
+        const exp = tagNumber(photo.ExposureTime, image.ExposureTime);
+        const exposureTime = exp ? (exp < 0.1 ? `1/${Math.round(1 / exp)}s` : `${Number(exp.toFixed(1))}s`) : undefined;
+        const isoNum = tagNumber(photo.ISOSpeedRatings, photo.ISO, image.ISO);
+        const iso = isoNum ? `ISO ${Math.round(isoNum)}` : undefined;
+
+        const exif: PhotoExif = { model, focalLength, fNumber, exposureTime, iso };
+        return Object.values(exif).some(Boolean) ? exif : null;
+    } catch {
+        return null;
+    }
+}
+
 /**
  * 构建时拉取一张照片并提取展示元信息：主色渐变对 + 原始宽高。
  * 主色取像素量化后的最大色桶；次色优先取色相差异明显的第二主色，
@@ -89,9 +162,10 @@ const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(mi
  * 任一步失败返回默认色，宽高为 0（调用方据此回退到不裁切的自然比例）。
  */
 export async function getPhotoMeta(src: string | null | undefined): Promise<PhotoMeta> {
-    if (!src) return { colors: FALLBACK_COLORS, width: 0, height: 0 };
+    if (!src) return { colors: FALLBACK_COLORS, width: 0, height: 0, exif: null };
     const cached = cache.get(src) ?? readDiskCache(src);
-    if (cached) {
+    // 旧缓存没有 exif 字段，视为未命中，重新计算一次并回写
+    if (cached && 'exif' in cached) {
         cache.set(src, cached);
         return cached;
     }
@@ -99,6 +173,7 @@ export async function getPhotoMeta(src: string | null | undefined): Promise<Phot
     let colors: [string, string] = FALLBACK_COLORS;
     let width = 0;
     let height = 0;
+    let exif: PhotoExif | null = null;
     try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 10_000);
@@ -107,6 +182,7 @@ export async function getPhotoMeta(src: string | null | undefined): Promise<Phot
         if (res.ok) {
             const buffer = Buffer.from(await res.arrayBuffer());
             const pipeline = sharp(buffer);
+            exif = parseExif(await pipeline.metadata());
 
             // rotate() 依据 EXIF 自动转正（iPhone 竖拍原图是横向像素），
             // 宽高直接取缩放后缓冲区的 info，保证和浏览器看到的方向一致
@@ -155,7 +231,7 @@ export async function getPhotoMeta(src: string | null | undefined): Promise<Phot
     } catch {
         // 保持默认色与 0 宽高
     }
-    const meta: PhotoMeta = { colors, width, height };
+    const meta: PhotoMeta = { colors, width, height, exif };
     cache.set(src, meta);
     writeDiskCache(src, meta);
     return meta;

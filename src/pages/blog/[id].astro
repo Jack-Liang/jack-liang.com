@@ -24,7 +24,10 @@ export async function getStaticPaths() {
 const { href } = Astro.url;
 const { post, prevPost, nextPost } = Astro.props as { post: CollectionEntry<'blog'>; prevPost: CollectionEntry<'blog'>; nextPost: CollectionEntry<'blog'> };
 const { title, publishDate, updatedDate, featureImage, excerpt, isFeatured, tags, seo } = post.data;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
+
+// 侧边目录：只取 h2/h3，且至少 3 个标题才有展示价值
+const tocItems = headings.filter((h) => h.depth === 2 || h.depth === 3);
 
 const jsonLd = {
     '@context': 'https://schema.org',
@@ -41,9 +44,9 @@ const jsonLd = {
 
 <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
-<BaseLayout title={seo?.title ?? title} description={seo?.description ?? excerpt} image={seo?.image ?? featureImage} pageType="article">
+<BaseLayout title={seo?.title ?? title} description={seo?.description ?? excerpt} image={seo?.image ?? { src: `/og/${post.id}.png`, alt: title }} pageType="article">
     <main class="px-4 py-12 grow sm:px-8 sm:py-16">
-        <article class="max-w-6xl mx-auto mb-12 sm:mb-16">
+        <article class="relative max-w-6xl mx-auto mb-12 sm:mb-16">
             <div class="max-w-3xl mx-auto mb-6">
                 <a
                     href="/blog/"
@@ -110,10 +113,36 @@ const jsonLd = {
                     </figure>
                 )
             }
-            <div class="max-w-3xl mx-auto">
+            <div class="relative max-w-3xl mx-auto">
                 <div class="prose prose-slate sm:prose-lg max-w-none">
                     <Content />
                 </div>
+                {
+                    tocItems.length >= 3 && (
+                        <nav aria-label="目录" class="hidden xl:block absolute top-0 bottom-0 left-full ml-6 w-40 print:hidden">
+                            <div class="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pb-4">
+                                <p class="mb-3 text-xs font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-500">目录</p>
+                                <ul class="space-y-1.5 border-l border-slate-200 dark:border-slate-700">
+                                    {tocItems.map((h) => (
+                                        <li>
+                                            <a
+                                                href={`#${h.slug}`}
+                                                data-toc-link
+                                                class:list={[
+                                                    '-ml-px block border-l-2 border-transparent py-0.5 text-[13px] leading-snug text-slate-500 transition-colors hover:text-primary dark:text-slate-400 dark:hover:text-primary-dark toc-link',
+                                                    h.depth === 3 && 'pl-6',
+                                                    h.depth === 2 && 'pl-3 font-medium text-slate-600 dark:text-slate-300'
+                                                ]}
+                                            >
+                                                {h.text}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </nav>
+                    )
+                }
                 <!-- <div class="flex flex-wrap mt-8 text-sm gap-x-3 gap-y-1 sm:mt-12 sm:text-base">
                     <span class="font-semibold">Share:</span>
                     <a
@@ -188,34 +217,129 @@ const jsonLd = {
         }
         <Subscribe class="mt-16 mb-12 sm:mt-24 sm:mb-16" />
         <Comments />
-        <button
-            id="back-to-top"
-            class="fixed bottom-8 right-8 z-50 flex items-center justify-center w-12 h-12 text-white bg-primary rounded-full shadow-lg opacity-0 invisible transition-all duration-300 hover:shadow-button hover:scale-105"
-            aria-label="Back to top"
-            onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
-        </button>
+
     </main>
-    <script is:inline>
-        (function() {
-            const backToTopBtn = document.getElementById('back-to-top');
-            if (!backToTopBtn) return;
+    <style is:global>
+        /* 目录当前小节高亮（链接元素由客户端脚本动态加类） */
+        .toc-link {
+            border-left-color: transparent;
+        }
+        .toc-link.toc-active {
+            border-left-color: #02738f;
+            color: #02738f;
+        }
+        .dark .toc-link.toc-active {
+            border-left-color: #38b2c8;
+            color: #38b2c8;
+        }
 
-            function toggleBackToTop() {
-                if (window.scrollY > 300) {
-                    backToTopBtn.classList.remove('opacity-0', 'invisible');
-                    backToTopBtn.classList.add('opacity-100', 'visible');
-                } else {
-                    backToTopBtn.classList.remove('opacity-100', 'visible');
-                    backToTopBtn.classList.add('opacity-0', 'invisible');
-                }
+        /* 代码块复制按钮：注入到每个 pre 内 */
+        .prose pre {
+            position: relative;
+        }
+        .code-copy-btn {
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            padding: 0.15rem 0.55rem;
+            font-size: 0.72rem;
+            line-height: 1.4;
+            border-radius: 0.45rem;
+            color: #d8dee9;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            opacity: 0.55;
+            transition: opacity 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+        .prose pre:hover .code-copy-btn {
+            opacity: 1;
+        }
+        .code-copy-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+    </style>
+    <script>
+        // 目录滚动高亮：滚动时取视口顶部之上最近的标题
+        let tocItems: { link: HTMLAnchorElement; heading: HTMLElement }[] = [];
+
+        function refreshToc() {
+            const links = [...document.querySelectorAll('[data-toc-link]')] as HTMLAnchorElement[];
+            tocItems = links
+                .map((link) => ({ link, heading: document.getElementById(decodeURIComponent(link.hash.slice(1))) }))
+                .filter((item): item is { link: HTMLAnchorElement; heading: HTMLElement } => !!item.heading);
+            highlightToc();
+        }
+
+        function highlightToc() {
+            if (tocItems.length === 0) return;
+            let current = tocItems[0];
+            for (const item of tocItems) {
+                if (item.heading.getBoundingClientRect().top <= 120) current = item;
             }
+            for (const { link } of tocItems) {
+                link.classList.toggle('toc-active', link === current.link);
+            }
+        }
 
-            window.addEventListener('scroll', toggleBackToTop);
-            toggleBackToTop();
-        })();
+        let tocTick = false;
+        document.addEventListener('scroll', () => {
+            if (tocTick) return;
+            tocTick = true;
+            requestAnimationFrame(() => {
+                highlightToc();
+                tocTick = false;
+            });
+        }, { passive: true });
+
+        // 复制工具：Clipboard API 失败时回退 execCommand（兼容非安全上下文）
+        async function copyText(text: string): Promise<boolean> {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                let ok = false;
+                try {
+                    ok = document.execCommand('copy');
+                } catch {
+                    ok = false;
+                }
+                ta.remove();
+                return ok;
+            }
+        }
+
+        // 代码块一键复制：给每个 prose 内的 pre 注入按钮
+        function bindCopyButtons() {
+            document.querySelectorAll('.prose pre').forEach((pre) => {
+                if (pre.dataset.copyBound) return;
+                pre.dataset.copyBound = '1';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'code-copy-btn';
+                btn.textContent = '复制';
+                btn.addEventListener('click', async () => {
+                    const code = pre.querySelector('code')?.innerText ?? pre.innerText ?? '';
+                    btn.textContent = (await copyText(code)) ? '已复制' : '复制失败';
+                    setTimeout(() => {
+                        btn.textContent = '复制';
+                    }, 1800);
+                });
+                pre.appendChild(btn);
+            });
+        }
+
+        refreshToc();
+        bindCopyButtons();
+        document.addEventListener('astro:page-load', () => {
+            refreshToc();
+            bindCopyButtons();
+        });
     </script>
 </BaseLayout>

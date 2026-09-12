@@ -3,7 +3,7 @@ import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CustomImage from '../../components/CustomImage.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
-import { getPhotoMeta } from '../../utils/photo-meta';
+import { getPhotoMeta, type PhotoExif } from '../../utils/photo-meta';
 
 export async function getStaticPaths() {
     const photos = (await getCollection('photography', ({ data }) => !data.draft)).sort(
@@ -25,19 +25,21 @@ export async function getStaticPaths() {
                     prev: photos[index - 1],
                     next: photos[index + 1],
                     colors: meta ? meta.colors : null,
-                    sizes
+                    sizes,
+                    exif: meta ? meta.exif : null
                 }
             };
         })
     );
 }
 
-const { photo, prev, next, colors, sizes } = Astro.props as {
+const { photo, prev, next, colors, sizes, exif } = Astro.props as {
     photo: CollectionEntry<'photography'>;
     prev?: CollectionEntry<'photography'>;
     next?: CollectionEntry<'photography'>;
     colors?: [string, string] | null;
     sizes?: string;
+    exif?: PhotoExif | null;
 };
 
 const { title, image, publishDate, location, camera } = photo.data;
@@ -45,6 +47,10 @@ const { Content } = await render(photo);
 
 const meta = [location, camera].filter(Boolean).join(' · ');
 const [navFrom, navTo] = colors ?? ['#a855f7', '#22d3ee'];
+// EXIF 信息行：有值才显示
+const exifLine = exif
+    ? [exif.model, exif.focalLength, exif.fNumber, exif.exposureTime, exif.iso].filter(Boolean).join(' · ')
+    : '';
 ---
 
 <BaseLayout title={`${title} | 拾光`} description={image.alt ?? title} image={image}>
@@ -81,6 +87,17 @@ const [navFrom, navTo] = colors ?? ['#a855f7', '#22d3ee'];
                         />
                         {image.alt && <figcaption class="mt-2 text-xs text-slate-400 dark:text-slate-500">{image.alt}</figcaption>}
                     </figure>
+
+                    {exifLine && (
+                        <p class="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-slate-400 dark:text-slate-500">
+                            {exifLine.split(' · ').map((part, i, arr) => (
+                                <>
+                                    <span>{part}</span>
+                                    {i < arr.length - 1 && <span aria-hidden="true">·</span>}
+                                </>
+                            ))}
+                        </p>
+                    )}
 
             {
                 prev && (

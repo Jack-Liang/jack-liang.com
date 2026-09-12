@@ -1,0 +1,37 @@
+---
+// 全站回到顶部：滚动超过一屏后出现，点击平滑回顶
+---
+
+<button
+    id="back-to-top"
+    aria-label="回到顶部"
+    class="fixed bottom-8 right-8 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg opacity-0 invisible translate-y-3 transition duration-300 hover:scale-105 hover:shadow-button active:scale-95 dark:bg-[#38b2c8]"
+>
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+    </svg>
+</button>
+
+<script>
+    // 委托式绑定：view transitions 换页后重新查询元素，旧监听不残留
+    function toggleBackToTop() {
+        const btn = document.getElementById('back-to-top');
+        if (!btn) return;
+        const show = window.scrollY > 480;
+        btn.classList.toggle('opacity-0', !show);
+        btn.classList.toggle('invisible', !show);
+        btn.classList.toggle('translate-y-3', !show);
+    }
+
+    function bindBackToTop() {
+        const btn = document.getElementById('back-to-top');
+        if (!btn || btn.dataset.bound) return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+        toggleBackToTop();
+    }
+
+    window.addEventListener('scroll', toggleBackToTop, { passive: true });
+    bindBackToTop();
+    document.addEventListener('astro:page-load', bindBackToTop);
+</script>
