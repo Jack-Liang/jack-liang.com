@@ -16,7 +16,7 @@ seo:
 ---
 
 > 《开发第一性原理》系列第 1/12 篇 · 上一篇：无 ·
-> 下一篇：[02 · 复杂问题，要先学会"切"](file:///c:/Users/Jack/Documents/GitHub/resume-jack-liang/src/content/blog/dev-first-principles-02-divide-by-responsibility.md)
+> 下一篇：[02 · 复杂问题，要先学会"切"](/blog/dev-first-principles-02-divide/)
 
 > **系列说明**：这个系列写我在开发里反复验证过的基本规律。不追新概念，只讲那些早晚会再次应验的东西。
 
