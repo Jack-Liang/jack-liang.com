@@ -4,9 +4,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import CustomImage from '../../components/CustomImage.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
+import { getPhotoMeta } from '../../utils/photo-meta';
 
 const photos = (await getCollection('photography', ({ data }) => !data.draft)).sort(
     (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
+);
+
+// 竖幅照片按顺序循环套用这几种容器比例（object-cover 轻微裁切），
+// 让相邻卡片高度错开，形成瀑布流的错落感；横幅/方图保持原比例。
+const PORTRAIT_ASPECTS = ['aspect-[4/5]', 'aspect-[3/4]', 'aspect-[7/10]'];
+const metas = await Promise.all(
+    photos.map((photo) =>
+        getPhotoMeta(typeof photo.data.image.src === 'string' ? photo.data.image.src : null)
+    )
 );
 ---
 
@@ -32,38 +42,48 @@ const photos = (await getCollection('photography', ({ data }) => !data.draft)).s
                         <p class="text-slate-500 dark:text-slate-400">照片整理中，敬请期待。</p>
                     ) : (
                         <div class="columns-1 gap-4 sm:columns-2 lg:columns-3">
-                            {photos.map((photo) => (
+                            {photos.map((photo, index) => {
+                                const meta = metas[index];
+                                const isPortrait = meta.width > 0 && meta.height / meta.width > 1.05;
+                                const aspectClass = isPortrait ? PORTRAIT_ASPECTS[index % PORTRAIT_ASPECTS.length] : '';
+                                return (
                                 <a
                                     href={`/shiguang/${photo.id}/`}
                                     class="group mb-4 block break-inside-avoid overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 transition-shadow hover:shadow-lg"
                                 >
-                                    <div class="relative">
+                                    <div class={`relative overflow-hidden ${aspectClass}`}>
                                         <CustomImage
                                             {...photo.data.image}
-                                            class="w-full transition-transform duration-500 group-hover:scale-[1.03]"
+                                            class={`${aspectClass ? 'h-full ' : ''}w-full transition-transform duration-500 group-hover:scale-[1.03]`}
                                             widths={[400, 640, 900]}
                                             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                                             loading="lazy"
                                             decoding="async"
                                         />
-                                        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                                        <div class="pointer-events-none absolute inset-x-0 bottom-0 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                                            <h2 class="text-lg font-semibold text-white">{photo.data.title}</h2>
-                                            {photo.data.location && (
-                                                <p class="mt-0.5 text-sm text-white/80">{photo.data.location}</p>
-                                            )}
-                                        </div>
+                                        {photo.data.image.alt && (
+                                            <>
+                                                <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                                                <div class="pointer-events-none absolute inset-x-0 bottom-0 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                                    <p class="line-clamp-3 text-sm leading-relaxed text-white/90">{photo.data.image.alt}</p>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
-                                    <div class="flex items-center justify-between px-4 py-3">
+                                    <div class="flex items-center justify-between gap-3 px-4 py-3">
                                         <h2 class="truncate text-sm font-medium text-slate-700 dark:text-slate-200">
                                             {photo.data.title}
                                         </h2>
-                                        <time class="ml-3 shrink-0 text-xs text-slate-400 dark:text-slate-500">
-                                            <FormattedDate date={photo.data.publishDate} />
-                                        </time>
+                                        <div class="flex shrink-0 items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+                                            {photo.data.location && <span class="max-w-40 truncate">{photo.data.location}</span>}
+                                            {photo.data.location && <span aria-hidden="true">·</span>}
+                                            <time>
+                                                <FormattedDate date={photo.data.publishDate} />
+                                            </time>
+                                        </div>
                                     </div>
                                 </a>
-                            ))}
+                                );
+                            })}
                         </div>
                     )
                 }

@@ -3,70 +3,59 @@ import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CustomImage from '../../components/CustomImage.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
+import { getPhotoMeta } from '../../utils/photo-meta';
 
 export async function getStaticPaths() {
     const photos = (await getCollection('photography', ({ data }) => !data.draft)).sort(
         (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
     );
-    return photos.map((photo, index) => {
-        return {
-            params: { id: photo.id },
-            props: {
-                photo,
-                prev: photos[index + 1],
-                next: photos[index - 1]
-            }
-        };
-    });
+    return Promise.all(
+        photos.map(async (photo, index) => {
+            return {
+                params: { id: photo.id },
+                props: {
+                    photo,
+                    prev: photos[index - 1],
+                    next: photos[index + 1],
+                    colors:
+                        typeof photo.data.image.src === 'string'
+                            ? (await getPhotoMeta(photo.data.image.src)).colors
+                            : null
+                }
+            };
+        })
+    );
 }
 
-const { photo, prev, next } = Astro.props as {
+const { photo, prev, next, colors } = Astro.props as {
     photo: CollectionEntry<'photography'>;
     prev?: CollectionEntry<'photography'>;
     next?: CollectionEntry<'photography'>;
+    colors?: [string, string] | null;
 };
 
 const { title, image, publishDate, location, camera } = photo.data;
 const { Content } = await render(photo);
 
 const meta = [location, camera].filter(Boolean).join(' · ');
+const [navFrom, navTo] = colors ?? ['#a855f7', '#22d3ee'];
 ---
 
 <BaseLayout title={`${title} | 拾光`} description={image.alt ?? title} image={image}>
     <main class="px-4 py-12 grow sm:px-8 sm:py-16">
-        {
-            prev && (
-                <a
-                    href={`/shiguang/${prev.id}/`}
-                    aria-label="上一篇"
-                    data-nav="prev"
-                    class="fixed top-1/2 z-40 flex h-24 w-24 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-gradient-to-br from-purple-500/50 to-cyan-400/50 text-white shadow-xl backdrop-blur-md transition hover:from-purple-500/70 hover:to-cyan-400/70"
-                    style="left: 1rem;"
-                >
-                    <svg viewBox="0 0 24 24" class="h-8 w-8 fill-current" aria-hidden="true">
-                        <path d="M15.5 4.5 7 12l8.5 7.5Z" />
-                    </svg>
-                </a>
-            )
-        }
-        {
-            next && (
-                <a
-                    href={`/shiguang/${next.id}/`}
-                    aria-label="下一篇"
-                    data-nav="next"
-                    class="fixed top-1/2 z-40 flex h-24 w-24 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-gradient-to-br from-purple-500/50 to-cyan-400/50 text-white shadow-xl backdrop-blur-md transition hover:from-purple-500/70 hover:to-cyan-400/70"
-                    style="right: 1rem;"
-                >
-                    <svg viewBox="0 0 24 24" class="h-8 w-8 fill-current" aria-hidden="true">
-                        <path d="M8.5 4.5 17 12l-8.5 7.5Z" />
-                    </svg>
-                </a>
-            )
-        }
+
+
         <article class="max-w-4xl mx-auto">
             <header class="mb-8">
-                <a href="/shiguang/" class="text-sm text-slate-500 hover:text-primary dark:text-slate-400">&larr; 返回拾光</a>
+                <a
+                    href="/shiguang/"
+                    class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition-colors duration-300 hover:bg-slate-200 hover:text-primary dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-primary-dark"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    返回拾光
+                </a>
                 <h1 class="mt-4 text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl">{title}</h1>
                 <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                     <FormattedDate date={publishDate} />
@@ -75,117 +64,50 @@ const meta = [location, camera].filter(Boolean).join(' · ');
                 </p>
             </header>
 
-            <figure>
-                <CustomImage
-                    {...image}
-                    class="w-full rounded-xl border border-slate-200 dark:border-slate-700"
-                    widths={[640, 960, 1280, 1920]}
-                    sizes="(min-width: 928px) 896px, calc(100vw - 32px)"
-                    loading="eager"
-                    fetchpriority="high"
-                />
-                {image.alt && <figcaption class="mt-2 text-xs text-slate-400 dark:text-slate-500">{image.alt}</figcaption>}
-            </figure>
+                    <figure>
+                        <CustomImage
+                            {...image}
+                            class="mx-auto block h-auto max-h-none w-full rounded-xl border border-slate-200 dark:border-slate-700 md:w-auto md:max-w-full md:max-h-[calc(100vh-22rem)]"
+                            widths={[640, 960, 1280, 1920]}
+                            sizes="(min-width: 928px) 896px, calc(100vw - 32px)"
+                            loading="eager"
+                            fetchpriority="high"
+                        />
+                        {image.alt && <figcaption class="mt-2 text-xs text-slate-400 dark:text-slate-500">{image.alt}</figcaption>}
+                    </figure>
+
+            {
+                prev && (
+                    <a
+                        href={`/shiguang/${prev.id}/`}
+                        aria-label="上一篇"
+                        class="fixed top-1/2 z-40 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 text-white backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 hover:scale-105 hover:brightness-110 active:scale-95"
+                        style={`left: max(0.5rem, calc(50% - 33rem)); background-image: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.05) 52%), linear-gradient(135deg, ${navFrom}4d, ${navTo}33); box-shadow: inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -10px 20px rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.25);`}
+                    >
+                        <svg viewBox="0 0 24 24" class="h-6 w-6 fill-current drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]" aria-hidden="true">
+                            <path d="M15.5 4.5 7 12l8.5 7.5Z" />
+                        </svg>
+                    </a>
+                )
+            }
+            {
+                next && (
+                    <a
+                        href={`/shiguang/${next.id}/`}
+                        aria-label="下一篇"
+                        class="fixed top-1/2 z-40 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 text-white backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 hover:scale-105 hover:brightness-110 active:scale-95"
+                        style={`right: max(0.5rem, calc(50% - 33rem)); background-image: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.05) 52%), linear-gradient(135deg, ${navFrom}4d, ${navTo}33); box-shadow: inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -10px 20px rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.25);`}
+                    >
+                        <svg viewBox="0 0 24 24" class="h-6 w-6 fill-current drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]" aria-hidden="true">
+                            <path d="M8.5 4.5 17 12l-8.5 7.5Z" />
+                        </svg>
+                    </a>
+                )
+            }
 
             <div class="prose prose-slate dark:prose-invert sm:prose-lg mt-10 max-w-none">
                 <Content />
             </div>
         </article>
     </main>
-
-    <script>
-        // 拾光详情页：按钮纵向固定于屏幕居中（不随滚动移动），
-        // 横向贴正文边缘（宽屏也不会跑到屏幕尽头），
-        // 并从照片提取特征色给玻璃渐变上色；取色失败时保留默认渐变。
-        let cleanup: (() => void) | undefined;
-
-        function enhancePhotoNav() {
-            cleanup?.();
-
-            const article = document.querySelector('main article');
-            if (!article) return;
-            const prevBtn = document.querySelector('a[data-nav="prev"]');
-            const nextBtn = document.querySelector('a[data-nav="next"]');
-            if (!prevBtn && !nextBtn) return;
-
-            const HALF = 48; // h-24 w-24 的一半，按钮中心压在正文边缘
-            const EDGE = 12; // 视口最小边距
-
-            const place = () => {
-                const rect = article!.getBoundingClientRect();
-                if (prevBtn) prevBtn.style.left = Math.max(EDGE, rect.left - HALF) + 'px';
-                if (nextBtn) nextBtn.style.right = Math.max(EDGE, window.innerWidth - rect.right - HALF) + 'px';
-            };
-            place();
-
-            const onResize = () => place();
-            window.addEventListener('resize', onResize);
-            cleanup = () => window.removeEventListener('resize', onResize);
-
-            const img = article.querySelector('figure img');
-            if (!(img instanceof HTMLImageElement)) return;
-
-            // 单独用 crossOrigin 副本探测像素，避免污染页面原图
-            const probe = new Image();
-            probe.crossOrigin = 'anonymous';
-            probe.onload = () => {
-                try {
-                    const size = 32;
-                    const canvas = document.createElement('canvas');
-                    canvas.width = size;
-                    canvas.height = size;
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    if (!ctx) return;
-                    ctx.drawImage(probe, 0, 0, size, size);
-                    const { data } = ctx.getImageData(0, 0, size, size);
-
-                    // 按 12 个色相桶统计饱和度权重，取最高分桶的加权平均色相
-                    const bins = new Array(12).fill(0);
-                    const sums = new Array(12).fill(0);
-                    for (let i = 0; i < data.length; i += 4) {
-                        const r = data[i] / 255;
-                        const g = data[i + 1] / 255;
-                        const b = data[i + 2] / 255;
-                        const max = Math.max(r, g, b);
-                        const min = Math.min(r, g, b);
-                        const l = (max + min) / 2;
-                        const d = max - min;
-                        if (d < 0.08) continue; // 灰色像素不参与
-                        const s = d / (1 - Math.abs(2 * l - 1) || 1e-6);
-                        if (s < 0.2 || l < 0.15 || l > 0.9) continue;
-                        let h;
-                        if (max === r) h = ((g - b) / d) % 6;
-                        else if (max === g) h = (b - r) / d + 2;
-                        else h = (r - g) / d + 4;
-                        h = (h * 60 + 360) % 360;
-                        const bucket = Math.floor(h / 30) % 12;
-                        bins[bucket] += s;
-                        sums[bucket] += h * s;
-                    }
-
-                    let best = -1;
-                    let bestScore = 0;
-                    bins.forEach((score, i) => {
-                        if (score > bestScore) {
-                            bestScore = score;
-                            best = i;
-                        }
-                    });
-                    if (best < 0) return; // 照片整体偏灰，保留默认渐变
-
-                    const hue = Math.round(sums[best] / bins[best]);
-                    const grad = `linear-gradient(135deg, hsl(${hue} 75% 62% / 0.55), hsl(${(hue + 50) % 360} 70% 45% / 0.55))`;
-                    for (const btn of [prevBtn, nextBtn]) {
-                        if (btn) btn.style.backgroundImage = grad;
-                    }
-                } catch {
-                    // 无 CORS 头读不到像素时保留默认渐变
-                }
-            };
-            probe.onerror = () => {}; // 探测失败保留默认渐变
-            probe.src = img.currentSrc || img.src;
-        }
-
-        document.addEventListener('astro:page-load', enhancePhotoNav);
-    </script>
 </BaseLayout>
