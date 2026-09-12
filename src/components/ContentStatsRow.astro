@@ -35,11 +35,11 @@ const shiguangLatest = photos[0]?.data.title;
 
 const items: StatItem[] = [
     {
-        label: '随想',
-        count: allNotes.length,
-        unit: '条',
-        latest: notesLatest,
-        href: '/notes/'
+        label: '文章',
+        count: posts.length,
+        unit: '篇',
+        latest: blogLatest,
+        href: '/blog/'
     },
     {
         label: '拾光',
@@ -49,11 +49,11 @@ const items: StatItem[] = [
         href: '/shiguang/'
     },
     {
-        label: '文章',
-        count: posts.length,
-        unit: '篇',
-        latest: blogLatest,
-        href: '/blog/'
+        label: '随想',
+        count: allNotes.length,
+        unit: '条',
+        latest: notesLatest,
+        href: '/notes/'
     }
 ];
 ---
