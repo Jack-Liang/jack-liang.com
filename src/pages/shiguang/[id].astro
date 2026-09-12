@@ -45,6 +45,31 @@ const { photo, prev, next, colors, sizes, exif } = Astro.props as {
 const { title, image, publishDate, location, camera } = photo.data;
 const { Content } = await render(photo);
 
+// 正文图片的占位宽高：getPhotoMeta 返回的是等比缩略图尺寸（比例正确），
+// 放大到 1920 基准后交给前端脚本写在 img 属性上，懒加载时就不会把页面顶得跳动
+const bodyImageDimensions: Record<string, { width: number; height: number }> = {};
+if (photo.body) {
+    const bodyUrls = [
+        ...new Set(
+            [...photo.body.matchAll(/!\[[^\]]*\]\(\s*(https:\/\/img\.jack-liang\.com\/[^)\s]+?)\s*\)/g)].map(
+                (m) => m[1]
+            )
+        )
+    ];
+    await Promise.all(
+        bodyUrls.map(async (url) => {
+            const m = await getPhotoMeta(url);
+            if (m.width > 0 && m.height > 0) {
+                const scale = 1920 / Math.max(m.width, m.height);
+                bodyImageDimensions[url] = {
+                    width: Math.round(m.width * scale),
+                    height: Math.round(m.height * scale)
+                };
+            }
+        })
+    );
+}
+
 const meta = [location, camera].filter(Boolean).join(' · ');
 const [navFrom, navTo] = colors ?? ['#a855f7', '#22d3ee'];
 // EXIF 信息行：有值才显示
@@ -76,28 +101,28 @@ const exifLine = exif
                 </p>
             </header>
 
-                    <figure>
+                    <figure class="mx-auto w-full max-w-full rounded-md border border-slate-200/80 bg-white p-3 pb-4 shadow-[0_12px_32px_rgba(15,23,42,0.10)] dark:border-slate-700/70 dark:bg-slate-900 dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)] md:w-fit">
                         <CustomImage
                             {...image}
-                            class="keep-original-colors mx-auto block h-auto max-h-none w-full rounded-xl border border-slate-200 dark:border-slate-700 md:w-auto md:max-w-full md:max-h-[calc(100vh-22rem)]"
+                            class="keep-original-colors block h-auto max-h-none w-full rounded-[3px] md:w-auto md:max-w-full md:max-h-[calc(100vh-27rem)]"
                             widths={[640, 960, 1280, 1920]}
                             sizes={sizes}
                             loading="eager"
                             fetchpriority="high"
                         />
-                        {image.alt && <figcaption class="mt-2 text-xs text-slate-400 dark:text-slate-500">{image.alt}</figcaption>}
+                        <figcaption class="mt-3 flex items-end justify-between gap-x-6 gap-y-2 px-1">
+                            <div class="min-w-0 text-left">
+                                {image.alt && <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{image.alt}</p>}
+                                {exifLine && <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{exifLine}</p>}
+                            </div>
+                            <time
+                                class="shrink-0 select-none font-mono text-sm tracking-widest text-amber-500/90 dark:text-amber-400/80"
+                                datetime={publishDate.toISOString()}
+                            >
+                                {publishDate.getFullYear()}·{String(publishDate.getMonth() + 1).padStart(2, '0')}·{String(publishDate.getDate()).padStart(2, '0')}
+                            </time>
+                        </figcaption>
                     </figure>
-
-                    {exifLine && (
-                        <p class="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-slate-400 dark:text-slate-500">
-                            {exifLine.split(' · ').map((part, i, arr) => (
-                                <>
-                                    <span>{part}</span>
-                                    {i < arr.length - 1 && <span aria-hidden="true">·</span>}
-                                </>
-                            ))}
-                        </p>
-                    )}
 
             {
                 prev && (
@@ -128,7 +153,10 @@ const exifLine = exif
                 )
             }
 
-            <div class="prose prose-slate dark:prose-invert sm:prose-lg mt-10 max-w-none">
+            <div
+                class="prose prose-slate dark:prose-invert sm:prose-lg mt-10 max-w-none"
+                data-body-image-dimensions={JSON.stringify(bodyImageDimensions)}
+            >
                 <Content />
             </div>
         </article>
@@ -145,4 +173,80 @@ const exifLine = exif
         const link = document.querySelector(e.key === 'ArrowLeft' ? 'a[aria-label="上一篇"]' : 'a[aria-label="下一篇"]');
         link?.click();
     });
+
+    // 正文图片升级成与头图同款的“照片卡片”：白框 + 阴影 + 圆角，alt 作为图注，
+    // 顺手套上 CDN 压缩与懒加载（头图仍保持 eager 高优先级）。
+    // 运行时包裹的元素样式全靠工具类，无需 is:global；view transitions 换页后靠 page-load 重跑
+    function enhanceBodyImages() {
+        const IMG_HOST = 'https://img.jack-liang.com/';
+        document.querySelectorAll('article .prose img').forEach((el) => {
+            const img = el as HTMLImageElement;
+            const p = img.parentElement;
+            // 只处理独占一段的图片；与文字混排的保持 prose 原样
+            if (img.dataset.cardDone || !p || p.tagName !== 'P' || p.children.length !== 1) return;
+            if ((p.textContent ?? '').trim() !== '') return;
+            img.dataset.cardDone = '1';
+
+            const src = img.getAttribute('src') ?? '';
+            if (src.startsWith(IMG_HOST) && !src.includes('/cdn-cgi/image/')) {
+                img.src = `${IMG_HOST}cdn-cgi/image/width=1920,format=auto/${src}`;
+            }
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            // 构建期量好的宽高先写上占位；没量到的等加载完补写，供下次浏览用
+            let dimsMap: Record<string, { width: number; height: number }> = {};
+            try {
+                dimsMap = JSON.parse(img.closest('.prose')?.getAttribute('data-body-image-dimensions') ?? '{}');
+            } catch {
+                dimsMap = {};
+            }
+
+            const alt = (img.getAttribute('alt') ?? '').trim();
+            const fig = document.createElement('figure');
+            // 卡片样式与头图 figure 同款；没有图注时用对称的 p-3，有图注才是 p-3 pb-4。
+            // 宽度交给 --card-w：min(列宽, 原图宽, (100vh - 27rem) × 宽高比)，与头图的高度上限
+            // 是同一套公式——懒加载图片没有固有尺寸，w-auto/w-fit 会塌成 0×0，必须先给定宽
+            fig.className = `prose-photo-card mx-auto my-8 w-full max-w-full rounded-md border border-slate-200/80 bg-white p-3 shadow-[0_12px_32px_rgba(15,23,42,0.10)] dark:border-slate-700/70 dark:bg-slate-900 dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)]${alt ? ' pb-4' : ''}`;
+            const dims = dimsMap[src];
+            if (dims) {
+                img.width = dims.width;
+                img.height = dims.height;
+                fig.style.setProperty(
+                    '--card-w',
+                    `min(100%, ${dims.width}px, calc((100vh - 27rem) * ${(dims.width / dims.height).toFixed(4)}))`
+                );
+            } else {
+                img.addEventListener(
+                    'load',
+                    () => {
+                        img.width = img.naturalWidth;
+                        img.height = img.naturalHeight;
+                    },
+                    { once: true }
+                );
+            }
+            img.className = 'm-0 block h-auto w-full rounded-[3px]';
+            fig.append(img);
+            if (alt) {
+                const caption = document.createElement('figcaption');
+                caption.className = 'mt-3 px-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300';
+                caption.textContent = alt;
+                fig.append(caption);
+            }
+            p.replaceWith(fig);
+        });
+    }
+    enhanceBodyImages();
+    document.addEventListener('astro:page-load', enhanceBodyImages);
 </script>
+
+<style is:global>
+    /* 正文照片卡片的桌面端宽度：--card-w 由脚本按每张图的宽高比写入
+       （min(列宽, 原图宽, (100vh - 27rem) × 宽高比)，与头图的高度上限同款公式）。
+       运行时注入的类 Tailwind 扫不到，这条规则只能手写；移动端退回 w-full 通栏 */
+    @media (min-width: 768px) {
+        article .prose figure.prose-photo-card {
+            width: var(--card-w, fit-content);
+        }
+    }
+</style>
