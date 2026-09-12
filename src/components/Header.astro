@@ -32,7 +32,7 @@ const { class: className } = Astro.props;
             <nav class="relative flex items-center gap-2" aria-label="Primary navigation">
                 <button
                     id="theme-toggle"
-                    class="group inline-flex items-center justify-center w-10 h-10 text-slate-600 transition duration-300 rounded-full cursor-pointer bg-slate-100 hover:bg-slate-200 hover:scale-105 active:scale-95 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                    class="group inline-flex items-center justify-center w-10 h-10 text-slate-600 transition duration-300 rounded-full cursor-pointer bg-white border border-slate-200 hover:bg-slate-100 hover:scale-105 active:scale-95 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
                     aria-label="Toggle theme"
                 >
                     <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform duration-500 group-hover:rotate-90 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -52,7 +52,7 @@ const { class: className } = Astro.props;
                 </button>
                 <button
                     id="search-toggle"
-                    class="group inline-flex items-center justify-center w-10 h-10 text-slate-600 transition duration-300 rounded-full cursor-pointer bg-slate-100 hover:bg-slate-200 hover:scale-105 active:scale-95 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
+                    class="group inline-flex items-center justify-center w-10 h-10 text-slate-600 transition duration-300 rounded-full cursor-pointer bg-white border border-slate-200 hover:bg-slate-100 hover:scale-105 active:scale-95 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
                     aria-label="Search"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -63,7 +63,7 @@ const { class: className } = Astro.props;
                 <button
                     id="random-post-toggle"
                     data-posts={JSON.stringify(randomPostUrls)}
-                    class="group inline-flex items-center justify-center w-10 h-10 text-slate-600 transition duration-300 rounded-full cursor-pointer bg-slate-100 hover:bg-slate-200 hover:scale-105 active:scale-95 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
+                    class="group inline-flex items-center justify-center w-10 h-10 text-slate-600 transition duration-300 rounded-full cursor-pointer bg-white border border-slate-200 hover:bg-slate-100 hover:scale-105 active:scale-95 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
                     aria-label="随机一篇"
                     title="随机一篇"
                 >

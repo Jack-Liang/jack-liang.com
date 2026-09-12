@@ -21,6 +21,10 @@ const { ...head } = Astro.props;
                     } else {
                         document.documentElement.classList.remove('dark');
                     }
+                    const themeColorMeta = document.getElementById('theme-color-meta');
+                    if (themeColorMeta) {
+                        themeColorMeta.content = isDark ? '#0f172a' : '#eef0f4';
+                    }
                 }
 
                 function closeSearch() {
@@ -58,6 +62,13 @@ const { ...head } = Astro.props;
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 const shouldDark = storedTheme ? storedTheme === 'dark' : prefersDark;
                 applyTheme(shouldDark);
+
+                // 用户未手动选择过主题时，跟随系统深浅模式实时切换
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                    if (!localStorage.getItem('theme')) {
+                        applyTheme(e.matches);
+                    }
+                });
 
                 document.addEventListener('click', (e) => {
                     const target = e.target;
