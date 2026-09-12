@@ -29,6 +29,12 @@ const { Content, headings } = await render(post);
 // 侧边目录：只取 h2/h3，且至少 3 个标题才有展示价值
 const tocItems = headings.filter((h) => h.depth === 2 || h.depth === 3);
 
+// 预计阅读时长：中文按 350 字/分钟，英文按 200 词/分钟
+const bodyText = post.body ?? '';
+const cjkChars = (bodyText.match(/[\u4e00-\u9fff]/g) ?? []).length;
+const latinWords = (bodyText.replace(/[\u4e00-\u9fff]/g, ' ').match(/[a-zA-Z]+/g) ?? []).length;
+const readingMinutes = Math.max(1, Math.round(cjkChars / 350 + latinWords / 200));
+
 const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -46,6 +52,12 @@ const jsonLd = {
 
 <BaseLayout title={seo?.title ?? title} description={seo?.description ?? excerpt} image={seo?.image ?? { src: `/og/${post.id}.png`, alt: title }} pageType="article">
     <main class="px-4 py-12 grow sm:px-8 sm:py-16">
+        <div
+            id="reading-progress"
+            aria-hidden="true"
+            class="fixed inset-x-0 top-0 z-50 h-[3px] origin-left bg-primary dark:bg-primary-dark"
+            style="transform: scaleX(0)"
+        ></div>
         <article class="relative max-w-6xl mx-auto mb-12 sm:mb-16">
             <div class="max-w-3xl mx-auto mb-6">
                 <a
@@ -69,6 +81,8 @@ const jsonLd = {
                         )
                     }
                     <FormattedDate date={publishDate} />
+                    {' · '}
+                    <span>约 {readingMinutes} 分钟</span>
                     {
                         updatedDate && (
                             <>
@@ -282,12 +296,22 @@ const jsonLd = {
             }
         }
 
+        // 阅读进度条：整页滚动进度，scaleX 变换驱动
+        function updateProgressBar() {
+            const bar = document.getElementById('reading-progress');
+            if (!bar) return;
+            const total = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = total > 0 ? Math.min(1, window.scrollY / total) : 0;
+            bar.style.transform = `scaleX(${progress})`;
+        }
+
         let tocTick = false;
         document.addEventListener('scroll', () => {
             if (tocTick) return;
             tocTick = true;
             requestAnimationFrame(() => {
                 highlightToc();
+                updateProgressBar();
                 tocTick = false;
             });
         }, { passive: true });
@@ -337,9 +361,11 @@ const jsonLd = {
 
         refreshToc();
         bindCopyButtons();
+        updateProgressBar();
         document.addEventListener('astro:page-load', () => {
             refreshToc();
             bindCopyButtons();
+            updateProgressBar();
         });
     </script>
 </BaseLayout>
