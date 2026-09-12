@@ -1,3 +1,6 @@
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import sharp from 'sharp';
 
 type RGB = { r: number; g: number; b: number };
@@ -13,6 +16,31 @@ const FALLBACK_COLORS: [string, string] = ['#a855f7', '#22d3ee'];
 
 // 同一次构建里列表页和详情页都会用到，按 URL 缓存避免重复拉取
 const cache = new Map<string, PhotoMeta>();
+
+// 跨构建的落盘缓存：照片多起来后避免每次 CI 都重新下载全部图片
+const CACHE_DIR = path.join(process.cwd(), '.cache', 'photo-meta');
+
+function diskCachePath(url: string) {
+    const hash = crypto.createHash('sha1').update(url).digest('hex');
+    return path.join(CACHE_DIR, `${hash}.json`);
+}
+
+function readDiskCache(url: string): PhotoMeta | null {
+    try {
+        return JSON.parse(fs.readFileSync(diskCachePath(url), 'utf8')) as PhotoMeta;
+    } catch {
+        return null;
+    }
+}
+
+function writeDiskCache(url: string, meta: PhotoMeta) {
+    try {
+        fs.mkdirSync(CACHE_DIR, { recursive: true });
+        fs.writeFileSync(diskCachePath(url), JSON.stringify(meta));
+    } catch {
+        // 缓存写失败不影响构建结果
+    }
+}
 
 function toHsl({ r, g, b }: RGB) {
     const rn = r / 255;
@@ -62,8 +90,11 @@ const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(mi
  */
 export async function getPhotoMeta(src: string | null | undefined): Promise<PhotoMeta> {
     if (!src) return { colors: FALLBACK_COLORS, width: 0, height: 0 };
-    const cached = cache.get(src);
-    if (cached) return cached;
+    const cached = cache.get(src) ?? readDiskCache(src);
+    if (cached) {
+        cache.set(src, cached);
+        return cached;
+    }
 
     let colors: [string, string] = FALLBACK_COLORS;
     let width = 0;
@@ -126,5 +157,6 @@ export async function getPhotoMeta(src: string | null | undefined): Promise<Phot
     }
     const meta: PhotoMeta = { colors, width, height };
     cache.set(src, meta);
+    writeDiskCache(src, meta);
     return meta;
 }

@@ -11,27 +11,33 @@ export async function getStaticPaths() {
     );
     return Promise.all(
         photos.map(async (photo, index) => {
+            const meta =
+                typeof photo.data.image.src === 'string' ? await getPhotoMeta(photo.data.image.src) : null;
+            // 桌面端照片受 max-height 约束，按真实宽高比估算实际渲染宽度作为 srcset 提示
+            const sizes =
+                meta && meta.width > 0
+                    ? `(min-width: 928px) min(896px, calc((100vh - 22rem) * ${(meta.width / meta.height).toFixed(2)})), calc(100vw - 32px)`
+                    : '(min-width: 928px) 896px, calc(100vw - 32px)';
             return {
                 params: { id: photo.id },
                 props: {
                     photo,
                     prev: photos[index - 1],
                     next: photos[index + 1],
-                    colors:
-                        typeof photo.data.image.src === 'string'
-                            ? (await getPhotoMeta(photo.data.image.src)).colors
-                            : null
+                    colors: meta ? meta.colors : null,
+                    sizes
                 }
             };
         })
     );
 }
 
-const { photo, prev, next, colors } = Astro.props as {
+const { photo, prev, next, colors, sizes } = Astro.props as {
     photo: CollectionEntry<'photography'>;
     prev?: CollectionEntry<'photography'>;
     next?: CollectionEntry<'photography'>;
     colors?: [string, string] | null;
+    sizes?: string;
 };
 
 const { title, image, publishDate, location, camera } = photo.data;
@@ -67,9 +73,9 @@ const [navFrom, navTo] = colors ?? ['#a855f7', '#22d3ee'];
                     <figure>
                         <CustomImage
                             {...image}
-                            class="mx-auto block h-auto max-h-none w-full rounded-xl border border-slate-200 dark:border-slate-700 md:w-auto md:max-w-full md:max-h-[calc(100vh-22rem)]"
+                            class="keep-original-colors mx-auto block h-auto max-h-none w-full rounded-xl border border-slate-200 dark:border-slate-700 md:w-auto md:max-w-full md:max-h-[calc(100vh-22rem)]"
                             widths={[640, 960, 1280, 1920]}
-                            sizes="(min-width: 928px) 896px, calc(100vw - 32px)"
+                            sizes={sizes}
                             loading="eager"
                             fetchpriority="high"
                         />
@@ -111,3 +117,15 @@ const [navFrom, navTo] = colors ?? ['#a855f7', '#22d3ee'];
         </article>
     </main>
 </BaseLayout>
+
+<script>
+    // 照片详情页：左右方向键翻上一张/下一张
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        const target = e.target as HTMLElement | null;
+        if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+        const link = document.querySelector(e.key === 'ArrowLeft' ? 'a[aria-label="上一篇"]' : 'a[aria-label="下一篇"]');
+        link?.click();
+    });
+</script>

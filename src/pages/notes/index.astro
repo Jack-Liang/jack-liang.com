@@ -35,6 +35,9 @@ for (const note of notesData) {
 // 按日期倒序排序
 allNotes.sort((a, b) => b.date.getTime() - a.date.getTime());
 
+// 出现过的年份（新→旧），用于锚点导航
+const years = [...new Set(allNotes.map((note) => note.date.getFullYear()))];
+
 function formatDate(date: Date) {
     return date.toLocaleDateString('zh-CN', {
         month: 'long',
@@ -63,10 +66,25 @@ function formatDate(date: Date) {
                 />
             </div>
 
+            {
+                years.length > 1 && (
+                    <nav class="max-w-3xl mx-auto mb-10 flex flex-wrap gap-2" aria-label="按年份跳转">
+                        {years.map((year) => (
+                            <a
+                                href={`#year-${year}`}
+                                class="px-3 py-1.5 text-sm font-medium rounded-full bg-slate-100 text-slate-600 hover:bg-primary hover:text-white transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-[#38b2c8] dark:hover:text-white"
+                            >
+                                {year} 年
+                            </a>
+                        ))}
+                    </nav>
+                )
+            }
+
             <div class="max-w-3xl mx-auto">
                 <div class="relative">
                     <div class="absolute left-8 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700 sm:left-10"></div>
-                    
+
                     <div class="space-y-6">
                         {allNotes.map((note, index) => {
                             const year = note.date.getFullYear();
@@ -75,7 +93,7 @@ function formatDate(date: Date) {
                             return (
                                 <>
                                     {showYear && (
-                                        <div class="relative pl-20 sm:pl-24">
+                                        <div id={`year-${year}`} class="relative scroll-mt-6 pl-20 sm:pl-24">
                                             <div class="absolute left-8 top-2.5 -translate-x-1/2 w-3 h-3 rounded-full bg-primary sm:left-10"></div>
                                             <h2 class="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
                                                 {year}

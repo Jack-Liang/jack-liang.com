@@ -22,3 +22,4 @@ pnpm-debug.log*
 
 # Cloudflare Wrangler cache
 .wrangler/
+.cache/

@@ -9,7 +9,7 @@
     --color-primary: #02738f;
     --color-primary-dark: #38b2c8;
     
-    --color-bg-page: #ffffff;
+    --color-bg-page: #eef0f4;
     --color-bg-secondary: #f8fafc;
     
     --color-text-primary: #334155;
@@ -119,7 +119,7 @@
         object-position: top;
     }
     
-    .dark article > figure > img {
+    .dark article > figure > img:not(.keep-original-colors) {
         filter: brightness(0.85) contrast(0.95);
     }
 }
@@ -127,6 +127,28 @@
 body {
     background-color: var(--color-bg-page);
     color: var(--color-text-primary);
+}
+
+/* 主题切换的圆形扩散/收拢动画期间，关闭默认的整页交叉淡化，
+   由 JS 对 ::view-transition 伪元素做 clipPath 动画（见 BaseLayout） */
+html.theme-transitioning::view-transition-old(root),
+html.theme-transitioning::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+/* 头部骰子按钮：悬停时晃一晃，呼应“随机” */
+@keyframes dice-wiggle {
+    0%,
+    100% {
+        transform: rotate(0);
+    }
+    25% {
+        transform: rotate(-14deg);
+    }
+    60% {
+        transform: rotate(10deg);
+    }
 }
 
 .dark .site-logo {
