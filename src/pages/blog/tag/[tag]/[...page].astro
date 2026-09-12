@@ -1,0 +1,82 @@
+---
+import type { Page } from 'astro';
+import { type CollectionEntry, getCollection } from 'astro:content';
+import BlogPostList from '../../../../components/BlogPostList.astro';
+import siteConfig from '../../../../data/site-config';
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { sortPostsByDateDesc } from '../../../../utils/post-utils';
+
+export async function getStaticPaths() {
+    const posts = (await getCollection('blog')).filter((post) => !post.data.draft);
+    const allTags = [...new Set(posts.flatMap((post) => post.data.tags ?? []))];
+    const pageSize = siteConfig.postsPerPage || 5;
+
+    return allTags.flatMap((tag) => {
+        const tagPosts = posts
+            .filter((post) => post.data.tags?.includes(tag))
+            .sort(sortPostsByDateDesc);
+        const pageCount = Math.ceil(tagPosts.length / pageSize);
+
+        return Array.from({ length: pageCount }, (_, i) => ({
+            params: { tag, page: i === 0 ? undefined : String(i + 1) },
+            props: {
+                tag,
+                posts: tagPosts.slice(i * pageSize, (i + 1) * pageSize),
+                currentPage: i + 1,
+                pageCount,
+                total: tagPosts.length
+            }
+        }));
+    });
+}
+
+const { tag, posts, currentPage, pageCount, total } = Astro.props as {
+    tag: string;
+    posts: CollectionEntry<'blog'>[];
+    currentPage: number;
+    pageCount: number;
+    total: number;
+};
+
+const tagBase = `/blog/tag/${tag}`;
+const prevUrl = currentPage > 1 ? (currentPage === 2 ? `${tagBase}/` : `${tagBase}/${currentPage - 1}/`) : null;
+const nextUrl = currentPage < pageCount ? `${tagBase}/${currentPage + 1}/` : null;
+
+// 标签栏与列表页一致；当前标签若不在高频前 10 里，插到最前面
+const tagCounts = new Map<string, number>();
+const allPosts = (await getCollection('blog')).filter((post) => !post.data.draft);
+allPosts.forEach((post) => {
+    (post.data.tags ?? []).forEach((t) => {
+        tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+    });
+});
+const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+const tags: [string, number][] = topTags.some(([t]) => t === tag) ? topTags : [[tag, total], ...topTags];
+
+const randomPostUrls = allPosts.map((post) => `/blog/${post.id}/`);
+---
+
+<BaseLayout title={`标签：${tag}`} description={`包含「${tag}」标签的文章，共 ${total} 篇`}>
+    <main data-pagefind-ignore class="px-4 py-12 grow sm:px-8 sm:py-16">
+        <div class="max-w-6xl mx-auto mb-10 sm:mb-14">
+            <a href="/blog/" class="text-sm text-slate-500 hover:text-primary dark:text-slate-400">&larr; 返回文章</a>
+            <h1 class="mt-4 after:bg-primary text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl after:mt-4 after:block after:h-px after:w-16 after:content-['']">
+                文章
+            </h1>
+            <p class="mt-4 text-slate-500 dark:text-slate-400">
+                标签「{tag}」下的 {total} 篇文章。
+            </p>
+        </div>
+
+        <BlogPostList
+            posts={posts}
+            tags={tags}
+            activeTag={tag}
+            currentPage={currentPage}
+            pageCount={pageCount}
+            prevUrl={prevUrl}
+            nextUrl={nextUrl}
+            randomPostUrls={randomPostUrls}
+        />
+    </main>
+</BaseLayout>

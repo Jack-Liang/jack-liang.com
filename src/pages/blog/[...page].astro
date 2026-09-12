@@ -1,9 +1,7 @@
 ---
 import type { GetStaticPathsOptions, Page } from 'astro';
 import { type CollectionEntry, getCollection } from 'astro:content';
-import Icon from '../../components/Icon.astro';
-import PostPreview from '../../components/PostPreview.astro';
-import Subscribe from '../../components/Subscribe.astro';
+import BlogPostList from '../../components/BlogPostList.astro';
 import siteConfig from '../../data/site-config';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { sortPostsByDateDesc } from '../../utils/post-utils';
@@ -18,245 +16,53 @@ export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
 
 const { page } = Astro.props as { page: Page<CollectionEntry<'blog'>> };
 
-// Get all posts for tag filtering
-const allPosts = (await getCollection('blog'))
-    .filter(({ data }) => !data.draft)
-    .sort(sortPostsByDateDesc);
-
-// Calculate all tags with counts
+// 标签云：取前 10 个高频标签
+const allPosts = (await getCollection('blog')).filter(({ data }) => !data.draft);
 const tagCounts = new Map<string, number>();
 allPosts.forEach((post) => {
     (post.data.tags ?? []).forEach((tag) => {
         tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
     });
 });
+const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
 
-// Sort tags by count descending
-const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
+// 随机一篇的文章清单
+const randomPostUrls = allPosts.map((post) => `/blog/${post.id}/`);
 ---
 
-<BaseLayout title="Ovidius Blog" description="Get all the latest news from Ovidius">
+<BaseLayout title="文章" description="ABAP 开发、技术与思考的长文记录">
     <main data-pagefind-ignore class="px-4 py-12 grow sm:px-8 sm:py-16">
-        <h1 class="sr-only">Blog</h1>
-        <div class="max-w-3xl mx-auto xl:max-w-6xl">
-            <!-- Tag Filter -->
-            <div class="mb-8 -mt-4">
-                <div class="relative overflow-hidden" id="tag-filter-wrapper">
-                    <div class="flex flex-wrap gap-2 items-center" id="tag-filter">
-                        <button
-                            data-tag=""
-                            class="px-3 py-1.5 text-sm font-medium rounded-full transition-colors tag-btn bg-primary text-white"
-                        >
-                            全部
-                        </button>
-                        {sortedTags.map(([tag, count]) => (
-                            <button
-                            data-tag={tag}
-                            class="px-3 py-1.5 text-sm font-medium rounded-full transition-colors tag-btn bg-slate-100 text-slate-600 hover:bg-primary hover:text-white dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-[#38b2c8]"
-                        >
-                                {tag} <span class="ml-1 text-xs opacity-70">({count})</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
-            <a
-                id="more-tags-btn"
-                href="/blog/tag"
-                class="hidden pt-4 mb-8 text-base font-medium text-primary hover:underline border-t border-slate-200"
-            >
-                更多标签 &rarr;
-            </a>
-
-            <!-- Posts Container -->
-            <div id="posts-container" class="posts-list">
-                {allPosts.map((post) => (
-                    <div class="post-item" data-tags={JSON.stringify(post.data.tags ?? [])}>
-                        <PostPreview post={post} />
-                    </div>
-                ))}
-            </div>
+        <div class="max-w-6xl mx-auto mb-10 sm:mb-14">
+            <h1 class="after:bg-primary text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl after:mt-4 after:block after:h-px after:w-16 after:content-['']">
+                文章
+            </h1>
+            <p class="mt-4 text-slate-500 dark:text-slate-400">
+                ABAP 开发、技术与思考的长文记录。
+            </p>
         </div>
 
-        <!-- Pagination -->
-        <nav aria-label="Pagination" class="max-w-3xl pt-12 mx-auto my-12 border-t border-slate-200 sm:my-16 sm:pt-16">
-            <div class="relative px-12 text-center">
-                <button
-                    id="prev-btn"
-                    class="absolute left-0 inline-flex items-center justify-center w-10 h-10 text-lg transition duration-300 -translate-y-1/2 rounded-full hover:bg-primary hover:shadow-button top-1/2 bg-slate-50 text-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-50 disabled:hover:text-slate-700"
-                    aria-label="Previous page"
-                >
-                    <Icon icon="arrow-left" class="w-5 h-5 fill-current" />
-                </button>
-                <span class="text-sm tracking-wider uppercase text-slate-500" id="pagination-info" aria-current="page">第 {page.currentPage} / {page.lastPage} 页</span>
-                <button
-                    id="next-btn"
-                    class="absolute right-0 inline-flex items-center justify-center w-10 h-10 text-lg transition duration-300 -translate-y-1/2 rounded-full hover:bg-primary hover:shadow-button top-1/2 bg-slate-50 text-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-50 disabled:hover:text-slate-700"
-                    aria-label="Next page"
-                >
-                    <Icon icon="arrow-right" class="w-5 h-5 fill-current" />
-                </button>
-            </div>
-        </nav>
-        <Subscribe class="my-12 sm:my-16" />
+        <BlogPostList
+            posts={page.data}
+            tags={topTags}
+            currentPage={page.currentPage}
+            pageCount={page.lastPage}
+            prevUrl={page.url.prev}
+            nextUrl={page.url.next}
+            randomPostUrls={randomPostUrls}
+        />
     </main>
+
+    <script is:inline>
+        // 兼容旧的客户端筛选/分页链接：/?tag=X、/?page=N → 对应静态页
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const tag = params.get('tag');
+            const pageNo = parseInt(params.get('page') || '', 10);
+            if (tag) {
+                window.location.replace(`/blog/tag/${encodeURIComponent(tag)}/`);
+            } else if (pageNo > 1) {
+                window.location.replace(`/blog/${pageNo}/`);
+            }
+        })();
+    </script>
 </BaseLayout>
-
-<style>
-    .post-item {
-        display: none;
-    }
-    .post-item.visible {
-        display: block;
-    }
-    #tag-filter-wrapper {
-        max-height: calc((1.75rem + 0.375rem + 0.5rem) * 3 + 0.5rem);
-    }
-</style>
-
-<script>
-    function init() {
-        const tagFilter = document.getElementById('tag-filter');
-        const moreTagsBtn = document.getElementById('more-tags-btn');
-        const tagButtons = document.querySelectorAll('.tag-btn');
-        const postItems = document.querySelectorAll('.post-item');
-        const paginationInfo = document.getElementById('pagination-info');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const postsPerPage = 5;
-
-        let currentTag = '';
-        let currentPage = 1;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('tag')) {
-            currentTag = urlParams.get('tag');
-        }
-        if (urlParams.get('page')) {
-            currentPage = parseInt(urlParams.get('page')) || 1;
-        }
-
-        function updateTagButtons() {
-            tagButtons.forEach(btn => {
-                const tag = btn.getAttribute('data-tag') || '';
-                if (tag === currentTag) {
-                    btn.classList.remove('bg-slate-100', 'text-slate-600', 'hover:bg-primary', 'hover:text-white', 'dark:bg-slate-800', 'dark:text-slate-300', 'dark:hover:bg-[#38b2c8]');
-                    btn.classList.add('bg-primary', 'text-white');
-                } else {
-                    btn.classList.remove('bg-primary', 'text-white');
-                    btn.classList.add('bg-slate-100', 'text-slate-600', 'hover:bg-primary', 'hover:text-white', 'dark:bg-slate-800', 'dark:text-slate-300', 'dark:hover:bg-[#38b2c8]');
-                }
-            });
-        }
-
-        function filterAndPaginate() {
-            const allPosts = Array.from(postItems);
-            const filteredPosts = currentTag
-                ? allPosts.filter(item => {
-                    const tags = JSON.parse(item.getAttribute('data-tags') || '[]');
-                    return tags.includes(currentTag);
-                })
-                : allPosts;
-
-            const totalPosts = filteredPosts.length;
-            const totalPages = Math.max(1, Math.ceil(totalPosts / postsPerPage));
-            currentPage = Math.min(Math.max(1, currentPage), totalPages);
-
-            const start = (currentPage - 1) * postsPerPage;
-            const end = start + postsPerPage;
-
-            allPosts.forEach((item) => {
-                item.classList.remove('visible');
-            });
-            filteredPosts.slice(start, end).forEach((item) => {
-                item.classList.add('visible');
-            });
-
-            if (paginationInfo) {
-                if (totalPosts === 0) {
-                    paginationInfo.textContent = '没有文章';
-                } else if (totalPages <= 1) {
-                    paginationInfo.textContent = `${totalPosts} 篇文章`;
-                } else {
-                    paginationInfo.textContent = `第 ${currentPage} / ${totalPages} 页`;
-                }
-            }
-
-            if (prevBtn) {
-                prevBtn.disabled = currentPage <= 1;
-            }
-            if (nextBtn) {
-                nextBtn.disabled = currentPage >= totalPages;
-            }
-        }
-
-        function updateURL() {
-            const url = new URL(window.location.href);
-            if (currentTag) {
-                url.searchParams.set('tag', currentTag);
-            } else {
-                url.searchParams.delete('tag');
-            }
-            url.searchParams.set('page', String(currentPage));
-            history.replaceState(null, '', url.toString());
-        }
-
-        tagButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                currentTag = btn.getAttribute('data-tag') || '';
-                currentPage = 1;
-                updateTagButtons();
-                filterAndPaginate();
-                updateURL();
-            });
-        });
-
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    filterAndPaginate();
-                    updateURL();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-        }
-
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                const allPosts = Array.from(postItems);
-                const filteredPosts = currentTag
-                    ? allPosts.filter(item => {
-                        const tags = JSON.parse(item.getAttribute('data-tags') || '[]');
-                        return tags.includes(currentTag);
-                    })
-                    : allPosts;
-                const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    filterAndPaginate();
-                    updateURL();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-        }
-
-        updateTagButtons();
-        filterAndPaginate();
-
-        // Show "more tags" button if tags exceed 3 rows
-        if (tagFilter && moreTagsBtn) {
-            const maxRows = 3;
-            const tagHeight = 34; // py-1.5 + content height
-            const gapHeight = 8; // gap-2
-            const rowHeight = tagHeight + gapHeight;
-            const maxHeight = rowHeight * maxRows + gapHeight;
-            if (tagFilter.scrollHeight > maxHeight) {
-                moreTagsBtn.classList.remove('hidden');
-            }
-        }
-    }
-
-    init();
-    document.addEventListener('astro:page-load', init);
-</script>

@@ -1,0 +1,138 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Icon from './Icon.astro';
+import PostPreview from './PostPreview.astro';
+import Subscribe from './Subscribe.astro';
+
+interface Props {
+    posts: CollectionEntry<'blog'>[];
+    tags: [string, number][];
+    activeTag?: string | null;
+    currentPage: number;
+    pageCount: number;
+    prevUrl?: string | null;
+    nextUrl?: string | null;
+    randomPostUrls: string[];
+}
+
+const { posts, tags, activeTag = null, currentPage, pageCount, prevUrl = null, nextUrl = null, randomPostUrls } = Astro.props;
+
+const pillBase = 'px-3 py-1.5 text-sm font-medium rounded-full transition-colors';
+const pillIdle = 'bg-slate-100 text-slate-600 hover:bg-primary hover:text-white dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-[#38b2c8] dark:hover:text-white';
+const pillActive = 'bg-primary text-white hover:shadow-button';
+---
+
+<div class="max-w-3xl mx-auto xl:max-w-6xl">
+    <!-- 标签栏：当前标签高亮，全部 = 回博客列表 -->
+    <div class="flex flex-wrap items-center gap-2 mb-10 sm:mb-12">
+        <a href="/blog/" class={`${pillBase} ${activeTag ? pillIdle : pillActive}`}>全部</a>
+        {
+            tags.map(([tag, count]) => {
+                const active = tag === activeTag;
+                return (
+                    <a href={`/blog/tag/${tag}/`} class={`${pillBase} ${active ? pillActive : pillIdle}`}>
+                        {tag} <span class="ml-1 text-xs opacity-70">({count})</span>
+                    </a>
+                );
+            })
+        }
+        <a
+            href="/blog/tag/"
+            class="px-3 py-1.5 text-sm font-medium rounded-full border border-slate-200 text-slate-500 hover:border-primary hover:text-primary transition-colors dark:border-slate-700 dark:text-slate-400 dark:hover:border-primary-dark dark:hover:text-primary-dark"
+        >
+            全部标签 →
+        </a>
+    </div>
+
+    {posts.map((post) => <PostPreview post={post} />)}
+
+    <!-- 随机一篇 -->
+    <div class="flex justify-center mt-10">
+        <button
+            id="random-post-btn"
+            data-posts={JSON.stringify(randomPostUrls)}
+            class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-5 py-2 text-sm font-medium text-slate-600 transition-colors duration-300 hover:bg-primary hover:text-white dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-[#38b2c8] dark:hover:text-white"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+                <circle cx="8.2" cy="8.2" r="1.2" fill="currentColor" stroke="none"></circle>
+                <circle cx="15.8" cy="8.2" r="1.2" fill="currentColor" stroke="none"></circle>
+                <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"></circle>
+                <circle cx="8.2" cy="15.8" r="1.2" fill="currentColor" stroke="none"></circle>
+                <circle cx="15.8" cy="15.8" r="1.2" fill="currentColor" stroke="none"></circle>
+            </svg>
+            随机一篇
+        </button>
+    </div>
+</div>
+
+<nav aria-label="Pagination" class="max-w-3xl pt-12 mx-auto my-12 border-t border-slate-200 sm:my-16 sm:pt-16">
+    <div class="relative px-12 text-center">
+        {
+            prevUrl ? (
+                <a
+                    href={prevUrl}
+                    aria-label="上一页"
+                    class="absolute left-0 inline-flex items-center justify-center w-10 h-10 text-lg transition duration-300 -translate-y-1/2 rounded-full hover:bg-primary hover:shadow-button top-1/2 bg-slate-50 text-slate-700 hover:text-white"
+                >
+                    <Icon icon="arrow-left" class="w-5 h-5 fill-current" />
+                </a>
+            ) : (
+                <span
+                    aria-disabled="true"
+                    class="absolute left-0 inline-flex items-center justify-center w-10 h-10 text-lg -translate-y-1/2 rounded-full bg-slate-50 text-slate-300 cursor-not-allowed top-1/2 dark:bg-slate-800 dark:text-slate-600"
+                >
+                    <Icon icon="arrow-left" class="w-5 h-5 fill-current" />
+                </span>
+            )
+        }
+        <span class="text-sm tracking-wider uppercase text-slate-500">
+            第 {currentPage} / {pageCount} 页
+        </span>
+        {
+            nextUrl ? (
+                <a
+                    href={nextUrl}
+                    aria-label="下一页"
+                    class="absolute right-0 inline-flex items-center justify-center w-10 h-10 text-lg transition duration-300 -translate-y-1/2 rounded-full hover:bg-primary hover:shadow-button top-1/2 bg-slate-50 text-slate-700 hover:text-white"
+                >
+                    <Icon icon="arrow-right" class="w-5 h-5 fill-current" />
+                </a>
+            ) : (
+                <span
+                    aria-disabled="true"
+                    class="absolute right-0 inline-flex items-center justify-center w-10 h-10 text-lg -translate-y-1/2 rounded-full bg-slate-50 text-slate-300 cursor-not-allowed top-1/2 dark:bg-slate-800 dark:text-slate-600"
+                >
+                    <Icon icon="arrow-right" class="w-5 h-5 fill-current" />
+                </span>
+            )
+        }
+    </div>
+</nav>
+
+<Subscribe class="my-12 sm:my-16" />
+
+<script>
+    import { navigate } from 'astro:transitions/client';
+
+    // 随机跳转一篇文章（链接清单构建时内联在 data-posts）
+    function bindRandomButton() {
+        const randomBtn = document.getElementById('random-post-btn');
+        if (randomBtn && !randomBtn.dataset.bound) {
+            randomBtn.dataset.bound = '1';
+            randomBtn.addEventListener('click', () => {
+                try {
+                    const urls = JSON.parse(randomBtn.dataset.posts || '[]');
+                    if (urls.length > 0) {
+                        navigate(urls[Math.floor(Math.random() * urls.length)]);
+                    }
+                } catch {
+                    // 清单解析失败时按钮不动作
+                }
+            });
+        }
+    }
+
+    bindRandomButton();
+    document.addEventListener('astro:page-load', bindRandomButton);
+</script>
