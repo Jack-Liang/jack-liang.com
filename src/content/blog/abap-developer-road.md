@@ -7,11 +7,11 @@ tags:
   - ABAP
   - Roadmap
 featureImage:
-  src: 'https://img.jack-liang.com/00-headImage/post-9.jpg'
-  alt: 头图
+  src: 'https://img.jack-liang.com/00-headImage/abap-developer-road.jpg'
+  alt: 路线图
 seo:
   image:
-    src: 'https://img.jack-liang.com/00-headImage/post-9.jpg' 
+    src: 'https://img.jack-liang.com/00-headImage/abap-developer-road.jpg'
 ---
 
 学习一门开发语言，如果可以在学习之前对整个技术路线有一定的了解，就能做到有计划的学习。
