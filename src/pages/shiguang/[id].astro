@@ -1,0 +1,95 @@
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CustomImage from '../../components/CustomImage.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+export async function getStaticPaths() {
+    const photos = (await getCollection('photography', ({ data }) => !data.draft)).sort(
+        (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
+    );
+    return photos.map((photo, index) => {
+        return {
+            params: { id: photo.id },
+            props: {
+                photo,
+                prev: photos[index + 1],
+                next: photos[index - 1]
+            }
+        };
+    });
+}
+
+const { photo, prev, next } = Astro.props as {
+    photo: CollectionEntry<'photography'>;
+    prev?: CollectionEntry<'photography'>;
+    next?: CollectionEntry<'photography'>;
+};
+
+const { title, image, publishDate, location, camera } = photo.data;
+const { Content } = await render(photo);
+
+const meta = [location, camera].filter(Boolean).join(' · ');
+---
+
+<BaseLayout title={`${title} | 拾光`} description={image.alt ?? title} image={image}>
+    <main class="px-4 py-12 grow sm:px-8 sm:py-16">
+
+
+        <article class="max-w-4xl mx-auto">
+            <header class="mb-8">
+                <a href="/shiguang/" class="text-sm text-slate-500 hover:text-primary dark:text-slate-400">&larr; 返回拾光</a>
+                <h1 class="mt-4 text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl">{title}</h1>
+                <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+                    <FormattedDate date={publishDate} />
+                    {meta && <span aria-hidden="true">·</span>}
+                    {meta && <span>{meta}</span>}
+                </p>
+            </header>
+
+            <div class="relative">
+                    {
+                        prev && (
+                            <a
+                                href={`/shiguang/${prev.id}/`}
+                                aria-label="上一篇"
+                                class="absolute left-2 top-1/2 z-20 flex h-24 w-24 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-gradient-to-br from-purple-500/50 to-cyan-400/50 text-white shadow-xl backdrop-blur-md transition hover:from-purple-500/70 hover:to-cyan-400/70 md:left-0 md:-translate-x-1/2"
+                            >
+                                <svg viewBox="0 0 24 24" class="h-8 w-8 fill-current" aria-hidden="true">
+                                    <path d="M15.5 4.5 7 12l8.5 7.5Z" />
+                                </svg>
+                            </a>
+                        )
+                    }
+                    {
+                        next && (
+                            <a
+                                href={`/shiguang/${next.id}/`}
+                                aria-label="下一篇"
+                                class="absolute right-2 top-1/2 z-20 flex h-24 w-24 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-gradient-to-br from-purple-500/50 to-cyan-400/50 text-white shadow-xl backdrop-blur-md transition hover:from-purple-500/70 hover:to-cyan-400/70 md:right-0 md:translate-x-1/2"
+                            >
+                                <svg viewBox="0 0 24 24" class="h-8 w-8 fill-current" aria-hidden="true">
+                                    <path d="M8.5 4.5 17 12l-8.5 7.5Z" />
+                                </svg>
+                            </a>
+                        )
+                    }
+                <figure>
+                <CustomImage
+                    {...image}
+                    class="w-full rounded-xl border border-slate-200 dark:border-slate-700"
+                    widths={[640, 960, 1280, 1920]}
+                    sizes="(min-width: 928px) 896px, calc(100vw - 32px)"
+                    loading="eager"
+                    fetchpriority="high"
+                />
+                {image.alt && <figcaption class="mt-2 text-xs text-slate-400 dark:text-slate-500">{image.alt}</figcaption>}
+                </figure>
+            </div>
+
+            <div class="prose prose-slate dark:prose-invert sm:prose-lg mt-10 max-w-none">
+                <Content />
+            </div>
+        </article>
+    </main>
+</BaseLayout>

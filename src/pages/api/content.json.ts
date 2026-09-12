@@ -2,9 +2,10 @@ import { getCollection } from 'astro:content';
 import { parseNotes } from '../../utils/notes-parser';
 import { sortPostsByDateDesc } from '../../utils/post-utils';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const BLOG_LIMIT = 20;
 const NOTES_LIMIT = 50;
+const SHIGUANG_LIMIT = 50;
 
 function truncate(s: string | undefined | null, maxLen: number): string {
     if (!s) return '';
@@ -60,7 +61,25 @@ export async function GET({ site }: { site: URL | undefined }) {
         excerpt: n.excerpt
     }));
 
-    const lastUpdatedMs = Math.max(blogLatest, notesLatest);
+    // --- 拾光（摄影） ---
+    const photos = (await getCollection('photography'))
+        .filter(({ data }) => !data.draft)
+        .sort((a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime());
+
+    const shiguangLatest = photos.length > 0 ? photos[0].data.publishDate.getTime() : 0;
+
+    const shiguangFeed = photos.slice(0, SHIGUANG_LIMIT).map((p) => {
+        const story = typeof p.body === 'string' ? p.body : '';
+        return {
+            id: p.id,
+            title: p.data.title,
+            publishDate: p.data.publishDate.toISOString(),
+            url: `/shiguang/${p.id}/`,
+            excerpt: truncate(p.data.image.alt ?? story, 100)
+        };
+    });
+
+    const lastUpdatedMs = Math.max(blogLatest, notesLatest, shiguangLatest);
     const lastUpdated = lastUpdatedMs > 0 ? new Date(lastUpdatedMs).toISOString() : new Date().toISOString();
     const baseUrl = site ? site.origin : '';
 
@@ -70,7 +89,8 @@ export async function GET({ site }: { site: URL | undefined }) {
             lastUpdated,
             baseUrl,
             blog: blogFeed,
-            notes: notesFeed
+            notes: notesFeed,
+            shiguang: shiguangFeed
         },
         {
             headers: {

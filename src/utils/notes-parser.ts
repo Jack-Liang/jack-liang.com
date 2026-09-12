@@ -1,12 +1,17 @@
 /**
  * 解析 notes 聚合 Markdown 文件为独立条目。
  *
- * notes 文件格式（以 --- 分隔条目）：
+ * 支持两种格式：
+ *
+ * 1. 标题格式（每个条目一个 `## 日期` 标题，内容可写在标题行或后续行）：
+ *   ## 2026.07.19 "走窄门。宽门进去的人多，但那是引向死亡的。"
+ *
+ *   ## 2026.08.31
+ *   AI+：所有行业都适合用 AI 再做一遍。
+ *
+ * 2. 旧格式（以独立一行的 --- 分隔条目，首行必须是日期）：
  *   2026.07.19
  *   "走窄门。宽门进去的人多，但那是引向死亡的。"
- *   ---
- *   2026.07.22
- *   "在觉得快要迷失自我时，散步是个好方法。"——《做二休五》
  *   ---
  *   2026.08.31
  *   AI+：所有行业都适合用 AI 再做一遍。
@@ -21,6 +26,7 @@ export type ParsedNote = {
 };
 
 const DATE_RE = /^(\d{4})\.(\d{2})\.(\d{2})\s*$/;
+const HEADING_RE = /^##\s+(\d{4}\.\d{2}\.\d{2})\s*(.*)$/;
 
 /**
  * 从字符串稳定生成一个短 hash（6 位 base-36），
@@ -46,10 +52,12 @@ function truncate(s: string, maxLen: number): string {
 
 export function parseNotes(rawMarkdown: string, sourceTag?: string): ParsedNote[] {
     const entries: ParsedNote[] = [];
-    // 兼容不同换行风格（\r\n / \n），先把分隔行单独标准化
+    // 兼容不同换行风格（\r\n / \n）
     const normalized = rawMarkdown.replace(/\r\n/g, '\n');
-    // 按独立一行的 --- 切分条目
-    const blocks = normalized.split(/\n---\n/);
+    // 文件里出现 `## 日期` 标题时按标题格式切分，否则按独立一行的 --- 切分
+    const blocks = /^##\s+\d{4}\.\d{2}\.\d{2}/m.test(normalized)
+        ? splitByDateHeadings(normalized)
+        : normalized.split(/\n---\n/);
 
     for (const block of blocks) {
         try {
@@ -89,4 +97,27 @@ export function parseNotes(rawMarkdown: string, sourceTag?: string): ParsedNote[
     }
 
     return entries.sort((a, b) => b.publishDate.getTime() - a.publishDate.getTime());
+}
+
+/**
+ * 把标题格式的笔记切成块，每块首行是纯日期，其余行是内容，
+ * 使其与旧格式共用同一套逐块解析逻辑。
+ */
+function splitByDateHeadings(normalized: string): string[] {
+    const blocks: string[] = [];
+    let current: string[] = [];
+
+    for (const line of normalized.split('\n')) {
+        const m = line.match(HEADING_RE);
+        if (m) {
+            if (current.length > 0) blocks.push(current.join('\n'));
+            current = [m[1]];
+            if (m[2].trim()) current.push(m[2].trim());
+        } else if (current.length > 0) {
+            current.push(line);
+        }
+    }
+    if (current.length > 0) blocks.push(current.join('\n'));
+
+    return blocks;
 }

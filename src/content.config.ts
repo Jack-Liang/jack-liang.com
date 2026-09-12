@@ -56,4 +56,20 @@ const notes = defineCollection({
     })
 });
 
-export const collections = { blog, pages, notes };
+const photography = defineCollection({
+    loader: glob({ pattern: '**/*.md', base: './src/content/photography' }),
+    schema: ({ image }) =>
+        z.object({
+            title: z.string(),
+            publishDate: z.coerce.date(),
+            location: z.string().optional(),
+            camera: z.string().optional(),
+            image: z.object({
+                src: image(),
+                alt: z.string().optional()
+            }),
+            draft: z.boolean().default(false)
+        })
+});
+
+export const collections = { blog, pages, notes, photography };
