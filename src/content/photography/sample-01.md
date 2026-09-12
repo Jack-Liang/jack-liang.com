@@ -6,7 +6,7 @@ camera: 示例机型
 image:
   src: 'https://picsum.photos/seed/jack-photo-01/900/1200'
   alt: 瀑布流示例照片（竖幅）
-draft: true
+draft: false
 ---
 
 这是一条**示例条目**，用来展示拾光专栏的排版效果。
