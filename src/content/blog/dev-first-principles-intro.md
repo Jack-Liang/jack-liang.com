@@ -32,11 +32,11 @@ seo:
 出了问题怎么排？这 4
 篇合起来是一套完整的排障方法论：先查什么、在哪查、怎么定位。
 
-- **[01 · 越诡异的 Bug，越可能是低级错误](/blog/dev-first-principles-01-occams-razor-for-bugs.md)**
+- **[01 · 越诡异的 Bug，越可能是低级错误](/blog/dev-first-principles-01-occams-razor-for-bugs)**
   —— 奥卡姆剃刀，先查基础
-- **[02 · 复杂问题，要先学会"切"](/blog/dev-first-principles-02-divide-by-responsibility.md)**
+- **[02 · 复杂问题，要先学会"切"](/blog/dev-first-principles-02-divide-by-responsibility)**
   —— 分而治之，按职责切
-- **[03 · 为什么一个数据只能有一个源头](/blog/dev-first-principles-03-single-source-of-truth.md)**
+- **[03 · 为什么一个数据只能有一个源头](/blog/dev-first-principles-03-single-source-of-truth)**
   —— 单一信息源（SSoT）
 - **04 · 找不到问题点？把范围砍一半试试** —— 二分定位
 
