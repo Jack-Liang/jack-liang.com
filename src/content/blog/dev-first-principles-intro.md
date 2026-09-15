@@ -7,7 +7,7 @@ tags:
   - ABAP
   - SAP
   - 系列导览
-isFeatured: true
+isFeatured: false
 featureImage:
   src: 'https://images.pexels.com/photos/20894402/pexels-photo-20894402.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200'
   alt: 溪流岩石上层层叠起的平衡石堆，寓意从基础层层奠基
@@ -36,7 +36,8 @@ seo:
   —— 奥卡姆剃刀，先查基础
 - **[02 · 复杂问题，要先学会"切"](/blog/dev-first-principles-02-divide-by-responsibility.md)**
   —— 分而治之，按职责切
-- **03 · 为什么一个数据只能有一个源头** —— 单一信息源（SSoT）
+- **[03 · 为什么一个数据只能有一个源头](/blog/dev-first-principles-03-single-source-of-truth.md)**
+  —— 单一信息源（SSoT）
 - **04 · 找不到问题点？把范围砍一半试试** —— 二分定位
 
 ### 失败处理 · 05-06
