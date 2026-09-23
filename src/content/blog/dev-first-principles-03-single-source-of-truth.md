@@ -7,7 +7,6 @@ tags:
   - ABAP
   - SAP
   - 数据治理
-isFeatured: true
 featureImage:
   src: 'https://img.jack-liang.com/dev-first-principles/pexels_35994684_large2x.jpg'
   alt: '配图：单一信息源'
@@ -17,7 +16,7 @@ seo:
 ---
 
 > 《开发第一性原理》系列第 3/12 篇 · 上一篇：02 - 复杂问题，要先学会"切" ·
-> 下一篇：04 - 把范围砍一半试试
+> 下一篇：[04 · 找不到问题点？把范围砍一半试试](/blog/dev-first-principles-04-binary-search-debugging)
 
 > **系列说明**：这个系列写我在开发里反复验证过的基本规律。不追新概念，只讲那些早晚会再次应验的东西。
 

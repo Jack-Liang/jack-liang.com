@@ -38,7 +38,7 @@ seo:
   —— 分而治之，按职责切
 - **[03 · 为什么一个数据只能有一个源头](/blog/dev-first-principles-03-single-source-of-truth)**
   —— 单一信息源（SSoT）
-- **04 · 找不到问题点？把范围砍一半试试** —— 二分定位
+- **[04 · 找不到问题点？把范围砍一半试试](/blog/dev-first-principles-04-binary-search-debugging)** —— 二分定位
 
 ### 失败处理 · 05-06
 
