@@ -60,13 +60,13 @@ function formatCanonicalURL(url: string | URL) {
 <link rel="preload" as="font" type="font/woff2" href={figtreeNormal} crossorigin="anonymous" />
 <link rel="preload" as="font" type="font/woff2" href={figtreeItalic} crossorigin="anonymous" />
 
-<style is:inline>
+<style is:inline define:vars={{ figtreeNormal, figtreeItalic }}>
     @font-face {
         font-family: 'Figtree Variable';
         font-style: normal;
         font-weight: 100 900;
         font-display: swap;
-        src: url({figtreeNormal}) format('woff2');
+        src: url(var(--figtreeNormal)) format('woff2');
         font-named-instance: 'Regular';
     }
     @font-face {
@@ -74,7 +74,7 @@ function formatCanonicalURL(url: string | URL) {
         font-style: italic;
         font-weight: 100 900;
         font-display: swap;
-        src: url({figtreeItalic}) format('woff2');
+        src: url(var(--figtreeItalic)) format('woff2');
         font-named-instance: 'Italic';
     }
 </style>
