@@ -1,18 +1,16 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '../../layouts/BaseLayout.astro';
 import CustomImage from '../../components/CustomImage.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPhotoMeta } from '../../utils/photo-meta';
 
 const photos = (await getCollection('photography', ({ data }) => !data.draft)).sort(
     (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
 );
 
-// 竖幅照片按顺序循环套用这几种容器比例（object-cover 轻微裁切），
-// 让相邻卡片高度错开，形成瀑布流的错落感；横幅/方图保持原比例。
-const PORTRAIT_ASPECTS = ['aspect-[4/5]', 'aspect-[3/4]', 'aspect-[7/10]'];
+// 读取每张照片的原始宽高比，供 justified（等高行、宽度自适应）布局使用。
 const metas = await Promise.all(
     photos.map((photo) =>
         getPhotoMeta(typeof photo.data.image.src === 'string' ? photo.data.image.src : null)
@@ -41,22 +39,22 @@ const metas = await Promise.all(
                     photos.length === 0 ? (
                         <p class="text-slate-500 dark:text-slate-400">照片整理中，敬请期待。</p>
                     ) : (
-                        <div class="columns-1 gap-4 sm:columns-2 lg:columns-3">
+                        <div id="photo-grid" class="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {photos.map((photo, index) => {
                                 const meta = metas[index];
-                                const isPortrait = meta.width > 0 && meta.height / meta.width > 1.05;
-                                const aspectClass = isPortrait ? PORTRAIT_ASPECTS[index % PORTRAIT_ASPECTS.length] : '';
+                                const aspectRatio = meta.width > 0 ? meta.width / meta.height : 1.5;
                                 return (
                                 <a
                                     href={`/shiguang/${photo.id}/`}
-                                    class="group mb-4 block break-inside-avoid overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 transition-shadow hover:shadow-lg"
+                                    data-ar={aspectRatio}
+                                    class="group block overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 transition-shadow hover:shadow-lg"
                                 >
-                                    <div class={`relative overflow-hidden ${aspectClass}`}>
+                                    <div class="photo-img-wrap relative overflow-hidden">
                                         <CustomImage
                                             {...photo.data.image}
-                                            class={`${aspectClass ? 'h-full ' : ''}w-full transition-transform duration-500 group-hover:scale-[1.03]`}
+                                            class="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
                                             widths={[400, 640, 900]}
-                                            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                                            sizes="(max-width: 639px) 100vw, (min-width: 1024px) 45vw, 70vw"
                                             loading="lazy"
                                             decoding="async"
                                         />
@@ -89,5 +87,140 @@ const metas = await Promise.all(
                 }
             </div>
         </div>
+
+        {/*
+          随机成行布局：照片按顺序随机两两或三三组成一行（同一次访问内分组固定，
+          拖动窗口不会重新洗牌），行内每张照片保持原始比例，整行等比缩放到铺满容器，
+          因此两张一行的照片较大、三张一行的较小，大小随机组合、左右宽度一致；
+          行列之间保留统一间隙。窄屏时每行内的照片改为上下排列、铺满整宽。
+          无 JS 时回退为上方的 Grid 布局。
+        */}
+        <script is:inline>
+            (function () {
+                var grid = document.getElementById('photo-grid');
+                if (!grid) return;
+                var cards = Array.prototype.slice.call(grid.querySelectorAll(':scope > a'));
+                var GAP = 20;
+
+                // 确定性伪随机：分组结果看起来随机，但同一组内容每次访问保持一致
+                function mulberry32(a) {
+                    return function () {
+                        a |= 0;
+                        a = (a + 0x6d2b79f5) | 0;
+                        var t = Math.imul(a ^ (a >>> 15), 1 | a);
+                        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                    };
+                }
+
+                // 把卡片数量随机切成 2 或 3 的行，保证最后一行不会只剩 1 张
+                function buildRows(n) {
+                    var rand = mulberry32((n * 2654435761) >>> 0);
+                    var sizes = [];
+                    var i = 0;
+                    while (i < n) {
+                        var remain = n - i;
+                        var k;
+                        if (remain <= 3) {
+                            k = remain;
+                        } else if (remain === 4) {
+                            k = 2;
+                        } else {
+                            k = rand() < 0.5 ? 2 : 3;
+                        }
+                        sizes.push(k);
+                        i += k;
+                    }
+
+                    var rows = [];
+                    var p = 0;
+                    sizes.forEach(function (k) {
+                        rows.push(cards.slice(p, p + k));
+                        p += k;
+                    });
+                    return rows;
+                }
+
+                var rows = buildRows(cards.length);
+
+                // 行容器只创建一次
+                var rowEls = rows.map(function (rowCards) {
+                    var rowEl = document.createElement('div');
+                    grid.appendChild(rowEl);
+                    rowCards.forEach(function (card) {
+                        rowEl.appendChild(card);
+                    });
+                    return rowEl;
+                });
+
+                function isNarrow() {
+                    return !window.matchMedia('(min-width: 640px)').matches;
+                }
+
+                function layout() {
+                    var width = grid.clientWidth;
+                    if (!width) return;
+                    var narrow = isNarrow();
+
+                    rows.forEach(function (rowCards, ri) {
+                        var rowEl = rowEls[ri];
+                        rowEl.style.display = 'flex';
+                        rowEl.style.gap = GAP + 'px';
+                        rowEl.style.flexDirection = narrow ? 'column' : 'row';
+
+                        if (narrow) {
+                            // 上下排列：每张照片铺满整宽，高度按自身比例
+                            rowCards.forEach(function (card) {
+                                var ar = parseFloat(card.dataset.ar) || 1.5;
+                                card.style.width = '100%';
+                                var wrap = card.querySelector('.photo-img-wrap');
+                                if (wrap) wrap.style.height = width / ar + 'px';
+                            });
+                            return;
+                        }
+
+                        // 同一行照片等高铺满：行高 = (容器宽 - 间隙) / 宽高比之和
+                        var sumAr = 0;
+                        rowCards.forEach(function (card) {
+                            sumAr += parseFloat(card.dataset.ar) || 1.5;
+                        });
+                        var h = (width - (rowCards.length - 1) * GAP) / sumAr;
+
+                        rowCards.forEach(function (card) {
+                            var ar = parseFloat(card.dataset.ar) || 1.5;
+                            card.style.width = ar * h + 'px';
+                            var wrap = card.querySelector('.photo-img-wrap');
+                            if (wrap) wrap.style.height = h + 'px';
+                        });
+                    });
+                }
+
+                grid.classList.remove(
+                    'grid',
+                    'grid-cols-1',
+                    'items-start',
+                    'sm:grid-cols-2',
+                    'lg:grid-cols-3'
+                );
+                grid.style.display = 'flex';
+                grid.style.flexDirection = 'column';
+                grid.style.gap = GAP + 'px';
+
+                var lastWidth = 0;
+                function relayout() {
+                    if (grid.clientWidth === lastWidth) return;
+                    lastWidth = grid.clientWidth;
+                    layout();
+                }
+
+                relayout();
+
+                if (window.ResizeObserver) {
+                    new ResizeObserver(relayout).observe(grid);
+                } else {
+                    window.addEventListener('resize', relayout);
+                }
+            })();
+        </script>
     </main>
 </BaseLayout>
