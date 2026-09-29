@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { parseNotes } from '../../utils/notes-parser';
 import Header from '../../components/Header.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
@@ -10,27 +11,14 @@ interface NoteItem {
 
 const notesData = await getCollection('notes');
 
-// 解析所有随想
-const allNotes: NoteItem[] = [];
-
-for (const note of notesData) {
-    const blocks = (note.body ?? '').split(/\n---\n/).filter(block => block.trim());
-    
-    for (const block of blocks) {
-        const lines = block.trim().split('\n');
-        const dateMatch = lines[0].match(/^(\d{4})\.(\d{2})\.(\d{2})/);
-        
-        if (dateMatch) {
-            const [, year, month, day] = dateMatch;
-            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-            const content = lines.slice(1).join('\n').trim();
-            
-            if (content) {
-                allNotes.push({ date, content });
-            }
-        }
-    }
-}
+// 解析所有随想（parseNotes 内部兼容 \r\n / \n 换行和两种书写格式）
+const allNotes: NoteItem[] = notesData.flatMap((entry) => {
+    const raw = typeof entry.body === 'string' ? entry.body : '';
+    return parseNotes(raw, entry.id).map((note) => ({
+        date: note.publishDate,
+        content: note.rawContent
+    }));
+});
 
 // 按日期倒序排序
 allNotes.sort((a, b) => b.date.getTime() - a.date.getTime());
