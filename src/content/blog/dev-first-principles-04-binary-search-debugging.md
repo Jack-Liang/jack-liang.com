@@ -7,7 +7,6 @@ tags:
   - ABAP
   - SAP
   - 数据治理
-isFeatured: true
 featureImage:
   src: 'https://img.jack-liang.com/dev-first-principles/pexels_20407396_large2x.jpg'
   alt: '配图：二分定位'
@@ -17,7 +16,7 @@ seo:
 ---
 
 > 《开发第一性原理》系列第 4/12 篇 · 上一篇：03 - 为什么一个数据只能有一个源头 ·
-> 下一篇：05 - 为什么"友好化"反而害了排障
+> 下一篇：[05 · 为什么"友好化"反而害了排障](/blog/dev-first-principles-05-friendly-error-messages)
 
 > **系列说明**：这个系列写我在开发里反复验证过的基本规律。不追新概念，只讲那些早晚会再次应验的东西。
 
