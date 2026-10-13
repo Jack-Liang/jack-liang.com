@@ -9,6 +9,7 @@ tags:
   - 错误处理
   - 消息链
 isFeatured: true
+draft: true
 seo:
   title: 为什么"友好化"反而害了排障 | 开发第一性原理 05
   description: 错误消息"友好化"反而让排障变难——核心原则：包装不替换，累加不丢弃。配 S/4 平台自开发的具体做法。

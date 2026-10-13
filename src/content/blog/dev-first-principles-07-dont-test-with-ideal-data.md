@@ -9,6 +9,7 @@ tags:
   - 单元测试
   - 测试金字塔
 isFeatured: true
+draft: true
 seo:
   title: 别用理想化数据测——测试能通过不等于代码能跑 | 开发第一性原理 07
   description: 测试能通过不等于代码能跑。配 ABAP Unit 实战（Function / Form 怎么测）+ 数据边界用例清单 + 测试金字塔。
