@@ -7,7 +7,7 @@ tags:
   - 排障
   - 消息链
   - 友好化
-isFeatured: true
+isFeatured: false
 featureImage:
   src: 'https://img.jack-liang.com/dev-first-principles/pexels_29147814_large2x.jpg'
   alt: '配图：友好化'
@@ -120,4 +120,4 @@ BAL_LOG_MSG_ADD，传消息类和参数，别硬编码文本。好处是 ID
 
 这也是 01 篇的延续：消息链一断，错误就穿上了隐身衣——不报错，只是查不到。
 
-下一篇聊失败处理的另一半：事前防御。和业务把数据的边界讲清楚，再动手写码。
+下一篇聊失败处理的另一半：[事前防御。和业务把数据的边界讲清楚，再动手写码](/blog/dev-first-principles-06-boundaries-before-code/)
