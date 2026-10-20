@@ -1,23 +1,15 @@
-c:\Users\Jack\.minimax\sessions\mvs_6d69b1044ac047f7a84956726bdee399\workspace\ajson-implementation-and-usage.md---
+---
 title: 能跑在笔记本中的 SAP 系统 excerpt: SAP 官方推出了 Docker
 版本的系统，提供给 ABAP 开发者使用，硬件要求也不高，本文讲解使用方法和注意事项。
 publishDate: 'Mar 25 2025' tags:
-
 - SAP
 - ABAP
 - Docker featureImage: src:
   'https://img.jack-liang.com/abap-cloud-developer-trial/p0.png' alt: 头图 seo:
   image: src: 'https://img.jack-liang.com/abap-cloud-developer-trial/p0.png'
+---
 
----
-本文首发于 [Jack-L的知乎专栏](https://zhuanlan.zhihu.com/p/1887893267435193692)
-2026.3.7更新：官方在 Docker 仓库中暂时下架了镜像，他们给出的理由是正在准备2025版本，这很令人费解。
-[ABAP Cloud Developer Trial 2023 Available Now - SAP Community](https://community.sap.com/t5/technology-blog-posts-by-sap/abap-cloud-developer-trial-2023-available-now/ba-p/14057183)
-![ABAP Cloud Developer Trial 2023 Available Now](https://img.jack-liang.com/abap-cloud-developer-trial/p1.jpg)
-不过，您暂时可以访问国内的镜像试试：
-[sapse/abap-cloud-developer-trial - Docker镜像 - 毫秒镜像](https://1ms.run/r/sapse/abap-cloud-developer-trial)
-希望官方能尽快传来好消息。
----
+## 本文首发于 [Jack-L的知乎专栏](https://zhuanlan.zhihu.com/p/1887893267435193692) 2026.3.7更新：官方在 Docker 仓库中暂时下架了镜像，他们给出的理由是正在准备2025版本，这很令人费解。 [ABAP Cloud Developer Trial 2023 Available Now - SAP Community](https://community.sap.com/t5/technology-blog-posts-by-sap/abap-cloud-developer-trial-2023-available-now/ba-p/14057183) ![ABAP Cloud Developer Trial 2023 Available Now](https://img.jack-liang.com/abap-cloud-developer-trial/p1.jpg) 不过，您暂时可以访问国内的镜像试试： [sapse/abap-cloud-developer-trial - Docker镜像 - 毫秒镜像](https://1ms.run/r/sapse/abap-cloud-developer-trial) 希望官方能尽快传来好消息。
 
 没有 ABAPer 开发者能抗拒拥有一台专属 SAP 服务器的诱惑。​
 
