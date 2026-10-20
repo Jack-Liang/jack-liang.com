@@ -7,7 +7,7 @@ tags:
   - 排障
   - 消息链
   - 友好化
-isFeatured: true
+isFeatured: false
 featureImage:
   src: 'https://img.jack-liang.com/dev-first-principles/pexels_20853949_large2x.jpg'
   alt: '配图：友好化'
