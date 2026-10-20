@@ -4,9 +4,12 @@ excerpt: 数据有几种情况，代码就要有几种应对。空、零、找�
 publishDate: 'Oct 15 2026'
 tags:
   - 开发第一性原理
-  - 排障
-  - 消息链
-  - 友好化
+  - 开发思想
+  - ABAP
+  - SAP
+  - 单元测试
+  - ABAP Unit
+  - 测试
 isFeatured: false
 featureImage:
   src: 'https://img.jack-liang.com/dev-first-principles/pexels_20853949_large2x.jpg'
