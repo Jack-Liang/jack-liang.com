@@ -15,6 +15,13 @@
  *   ---
  *   2026.08.31
  *   AI+：所有行业都适合用 AI 再做一遍。
+ *
+ * 3. 省略日期：条目继承文件内上一条的日期（同一天连记多条时，
+ *   只有第一条需要写日期；文件第一条必须带日期，否则警告跳过）：
+ *   2026.10.25
+ *   第一条随想。
+ *   ---
+ *   第二条随想（自动算作 2026.10.25）。
  */
 
 export type ParsedNote = {
@@ -59,6 +66,9 @@ export function parseNotes(rawMarkdown: string, sourceTag?: string): ParsedNote[
         ? splitByDateHeadings(normalized)
         : normalized.split(/\n---\n/);
 
+    // 无日期条目继承文件内上一条的日期
+    let lastDate: { y: number; m: number; d: number } | null = null;
+
     for (const block of blocks) {
         try {
             const trimmed = block.trim();
@@ -67,17 +77,26 @@ export function parseNotes(rawMarkdown: string, sourceTag?: string): ParsedNote[
             const lines = trimmed.split('\n');
             const firstLine = lines[0].trim();
             const m = firstLine.match(DATE_RE);
-            if (!m) {
-                console.warn(`[notes-parser] 跳过无日期的条目：${truncate(trimmed, 30)}${sourceTag ? ` (来源: ${sourceTag})` : ''}`);
+            let date: { y: number; m: number; d: number };
+            let contentStart: number;
+            if (m) {
+                date = { y: Number(m[1]), m: Number(m[2]) - 1, d: Number(m[3]) };
+                lastDate = date;
+                contentStart = 1;
+            } else if (lastDate) {
+                date = lastDate;
+                contentStart = 0;
+            } else {
+                console.warn(`[notes-parser] 跳过无日期的条目（文件第一条必须带日期）：${truncate(trimmed, 30)}${sourceTag ? ` (来源: ${sourceTag})` : ''}`);
                 continue;
             }
 
-            const year = Number(m[1]);
-            const month = Number(m[2]) - 1;
-            const day = Number(m[3]);
-            const publishDate = new Date(Date.UTC(year, month, day));
+            const publishDate = new Date(Date.UTC(date.y, date.m, date.d));
 
-            const contentLines = lines.slice(1).filter((l) => l.trim().length > 0);
+            // 独立成行的 --- 一律视为分隔符残留（含文件末尾无换行的情况），不进正文
+            const contentLines = lines
+                .slice(contentStart)
+                .filter((l) => l.trim().length > 0 && l.trim() !== '---');
             const rawContent = contentLines.join('\n').trim();
             if (!rawContent) continue;
 
@@ -85,8 +104,8 @@ export function parseNotes(rawMarkdown: string, sourceTag?: string): ParsedNote[
             const title = truncate(rawContent, 60);
             const excerpt = truncate(rawContent, 60);
 
-            const idSeed = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}-${rawContent.replace(/\s+/g, ' ').slice(0, 10)}`;
-            const id = `note-${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}-${shortHash(idSeed)}`;
+            const idSeed = `${date.y}-${String(date.m + 1).padStart(2, '0')}-${String(date.d).padStart(2, '0')}-${rawContent.replace(/\s+/g, ' ').slice(0, 10)}`;
+            const id = `note-${date.y}-${String(date.m + 1).padStart(2, '0')}-${String(date.d).padStart(2, '0')}-${shortHash(idSeed)}`;
 
             entries.push({ id, title, publishDate, excerpt, rawContent });
         } catch (err) {

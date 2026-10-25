@@ -1,36 +1,55 @@
 ---
 import { getCollection } from 'astro:content';
 import { parseNotes } from '../../utils/notes-parser';
+import { COLS_DESKTOP, COLS_MOBILE, rowsFor, scatterFor } from '../../utils/notes-scatter';
 import Header from '../../components/Header.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-
-interface NoteItem {
-    date: Date;
-    content: string;
-}
 
 const notesData = await getCollection('notes');
 
 // 解析所有随想（parseNotes 内部兼容 \r\n / \n 换行和两种书写格式）
-const allNotes: NoteItem[] = notesData.flatMap((entry) => {
+const allNotes = notesData.flatMap((entry) => {
     const raw = typeof entry.body === 'string' ? entry.body : '';
     return parseNotes(raw, entry.id).map((note) => ({
+        id: note.id,
         date: note.publishDate,
         content: note.rawContent
     }));
 });
-
-// 按日期倒序排序
 allNotes.sort((a, b) => b.date.getTime() - a.date.getTime());
 
-// 出现过的年份（新→旧），用于锚点导航
-const years = [...new Set(allNotes.map((note) => note.date.getFullYear()))];
+// 构建时预渲染散布（由内容 key 派生，刷新后纸条位置不变）
+const scatterKey = allNotes.map((n) => n.id).join('|');
+const spotsDesktop = scatterFor(allNotes.length, scatterKey, COLS_DESKTOP);
+const spotsMobile = scatterFor(allNotes.length, scatterKey, COLS_MOBILE);
 
-function formatDate(date: Date) {
-    return date.toLocaleDateString('zh-CN', {
-        month: 'long',
-        day: 'numeric'
-    });
+function pad(n: number) {
+    return String(n).padStart(2, '0');
+}
+
+function formatStamp(date: Date) {
+    return `${date.getUTCFullYear()}.${pad(date.getUTCMonth() + 1)}.${pad(date.getUTCDate())}`;
+}
+
+// 内容越长纸条越宽（构建时定档）
+function paperSize(content: string): 's' | 'm' | 'l' {
+    const len = content.replace(/\s+/g, '').length;
+    if (len <= 16) return 's';
+    if (len <= 40) return 'm';
+    return 'l';
+}
+
+// 纸色板数量（与 CSS 中 .pc-0 ~ .pc-(N-1) 对应）
+const PALETTE_COUNT = 6;
+
+// 由随想 id 稳定派生纸色：同一条笔记永远同色，加新笔记不影响旧笔记
+function paperColor(id: string): number {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < id.length; i++) {
+        h ^= id.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0) % PALETTE_COUNT;
 }
 ---
 
@@ -40,69 +59,541 @@ function formatDate(date: Date) {
     </div>
 
     <main class="py-12 grow sm:py-16">
-        <div class="px-4 mb-12 sm:mb-16 sm:px-8">
-            <div class="max-w-3xl mx-auto mb-8 sm:mb-12">
+        <div class="max-w-5xl mx-auto px-4 sm:px-8">
+            <div class="mb-10 sm:mb-12">
                 <h1 class="after:bg-primary text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl after:mt-4 after:block after:h-px after:w-16 after:content-['']">
                     随想
                 </h1>
                 <p class="mt-4 text-slate-500 dark:text-slate-400">生活不是我们活过的日子，而是我们记住的日子。</p>
-                <img
-                    src="https://pexels.kiksoft.net/api/random?orientation=landscape"
-                    alt="随想封面图"
-                    class="mt-6 w-full max-h-48 h-auto object-cover rounded-xl border border-slate-200 dark:border-slate-700"
-                    loading="lazy"
-                />
             </div>
 
             {
-                years.length > 1 && (
-                    <nav class="max-w-3xl mx-auto mb-10 flex flex-wrap gap-2" aria-label="按年份跳转">
-                        {years.map((year) => (
-                            <a
-                                href={`#year-${year}`}
-                                class="px-3 py-1.5 text-sm font-medium rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-primary hover:border-primary hover:text-white transition-colors dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#38b2c8] dark:hover:border-[#38b2c8] dark:hover:text-white"
-                            >
-                                {year} 年
-                            </a>
-                        ))}
-                    </nav>
+                allNotes.length === 0 ? (
+                    <p class="rounded-2xl border border-dashed border-slate-300 py-16 text-center text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                        还没有随想，先去写一张纸条吧。
+                    </p>
+                ) : (
+                    <div class="notes-desk-outer">
+                        <div
+                            id="notes-desk"
+                            class="notes-desk"
+                            style={`--rows-sm: ${rowsFor(allNotes.length, COLS_MOBILE)}; --rows: ${rowsFor(allNotes.length, COLS_DESKTOP)};`}
+                        >
+                            {allNotes.map((note, index) => {
+                                const d = spotsDesktop[index];
+                                const m = spotsMobile[index];
+                                return (
+                                    <button
+                                        type="button"
+                                        class={`note-paper pc-${paperColor(note.id)} size-${paperSize(note.content)}`}
+                                        style={`--x: ${d.x}%; --y: ${d.y}%; --r: ${d.r}deg; --z: ${d.z}; --tx: ${d.tapeX}px; --x-sm: ${m.x}%; --y-sm: ${m.y}%;`}
+                                        aria-haspopup="dialog"
+                                    >
+                                        <span class="note-date">{formatStamp(note.date)}</span>
+                                        <span class="note-text">{note.content}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                 )
             }
 
-            <div class="max-w-3xl mx-auto">
-                <div class="relative">
-                    <div class="absolute left-8 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700 sm:left-10"></div>
-
-                    <div class="space-y-6">
-                        {allNotes.map((note, index) => {
-                            const year = note.date.getFullYear();
-                            const prevYear = index > 0 ? allNotes[index - 1].date.getFullYear() : null;
-                            const showYear = year !== prevYear;
-                            return (
-                                <>
-                                    {showYear && (
-                                        <div id={`year-${year}`} class="relative scroll-mt-6 pl-20 sm:pl-24">
-                                            <div class="absolute left-8 top-2.5 -translate-x-1/2 w-3 h-3 rounded-full bg-primary sm:left-10"></div>
-                                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
-                                                {year}
-                                            </h2>
-                                        </div>
-                                    )}
-                                    <article class="relative pl-20 sm:pl-24">
-                                        <div class="absolute left-8 top-3 w-4 h-4 -translate-x-1/2 rounded-full border-4 border-white bg-primary sm:left-10"></div>
-                                        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-                                            <time class="text-sm text-slate-400 dark:text-slate-500">{formatDate(note.date)}</time>
-                                            <div class="mt-2 text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-                                                {note.content}
-                                            </div>
-                                        </div>
-                                    </article>
-                                </>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
+            {
+                allNotes.length > 0 && (
+                    <p class="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
+                        点击一张纸条捡起来看看
+                    </p>
+                )
+            }
         </div>
     </main>
+
+    <div id="note-modal" class="note-modal" aria-hidden="true">
+        <div class="note-backdrop"></div>
+        <div class="note-stage">
+            <div id="note-card" class="note-card pc-0" role="dialog" aria-modal="true" aria-labelledby="note-modal-date" tabindex="-1">
+                <button type="button" class="note-close" aria-label="放回纸条">
+                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                </button>
+                <time id="note-modal-date" class="note-modal-date"></time>
+                <div id="note-modal-body" class="note-modal-body"></div>
+            </div>
+        </div>
+    </div>
 </BaseLayout>
+
+<style>
+    /* ===== 桌面画布 ===== */
+    .notes-desk-outer {
+        border-radius: 1.5rem;
+        padding: 1.5rem 1.1rem;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background:
+            radial-gradient(rgba(2, 115, 143, 0.06) 1px, transparent 1.5px) 0 0 / 26px 26px,
+            linear-gradient(160deg, #e9edf3, #e5eaf1);
+    }
+
+    @media (min-width: 640px) {
+        .notes-desk-outer {
+            padding: 2rem 1.75rem;
+        }
+    }
+
+    .notes-desk {
+        container-type: inline-size;
+        position: relative;
+        /* 奇数列下沉半行（高低错落），画布多算半行 */
+        min-height: calc((var(--rows-sm, 1) + 0.5) * 184px);
+    }
+
+    @media (min-width: 640px) {
+        .notes-desk {
+            min-height: calc((var(--rows, 1) + 0.5) * 188px);
+        }
+    }
+
+    /* 兜底纸色（零优先级，任何 .pc-N 调色板都能覆盖） */
+    :where(.note-paper, .note-card) {
+        --paper-bg: #fdfaf0;
+        --paper-ink: #4a4339;
+        --paper-edge: rgba(120, 100, 60, 0.14);
+    }
+
+    /* ===== 纸色板（低饱和纸感，frontmatter 的 PALETTE_COUNT 与此对应） ===== */
+    .pc-0 { --paper-bg: #fdfaf0; --paper-ink: #4a4339; --paper-edge: rgba(120, 100, 60, 0.14); }
+    .pc-1 { --paper-bg: #fdf4c9; --paper-ink: #5d532a; --paper-edge: rgba(140, 120, 40, 0.18); }
+    .pc-2 { --paper-bg: #e9f2f8; --paper-ink: #33506b; --paper-edge: rgba(60, 100, 140, 0.16); }
+    .pc-3 { --paper-bg: #ebf3e6; --paper-ink: #47603f; --paper-edge: rgba(80, 120, 70, 0.16); }
+    .pc-4 { --paper-bg: #fcebe7; --paper-ink: #6d4a42; --paper-edge: rgba(150, 90, 80, 0.14); }
+    .pc-5 { --paper-bg: #f1edf8; --paper-ink: #4f4668; --paper-edge: rgba(100, 90, 140, 0.16); }
+
+    /* ===== 纸条 ===== */
+    .note-paper {
+        --w: 196px;
+        position: absolute;
+        left: var(--x-sm, 50%);
+        top: var(--y-sm, 50%);
+        z-index: var(--z, 1);
+        transform: translate(-50%, -50%) rotate(var(--r, 0deg));
+        /* 宽度上限按画布宽计（cqw），两列窄画布下保证 < 列距，杜绝同排互叠 */
+        width: min(var(--w), 36cqw);
+        padding: 0.8rem 0.9rem 0.7rem;
+        background: var(--paper-bg);
+        color: var(--paper-ink);
+        border: 1px solid var(--paper-edge);
+        border-radius: 10px;
+        box-shadow:
+            0 1px 2px rgba(100, 80, 40, 0.14),
+            0 6px 14px rgba(100, 80, 40, 0.12);
+        text-align: left;
+        cursor: pointer;
+        transition:
+            left 0.7s cubic-bezier(0.3, 0.7, 0.2, 1),
+            top 0.7s cubic-bezier(0.3, 0.7, 0.2, 1),
+            transform 0.7s cubic-bezier(0.3, 0.7, 0.2, 1),
+            box-shadow 0.25s ease,
+            opacity 0.25s ease,
+            filter 0.25s ease;
+    }
+
+    @media (min-width: 640px) {
+        .note-paper {
+            left: var(--x, 50%);
+            top: var(--y, 50%);
+            width: min(var(--w), 21cqw);
+        }
+    }
+
+    .size-s { --w: 168px; }
+    .size-m { --w: 196px; }
+    .size-l { --w: 226px; }
+
+    /* 顶部一截半透明胶带（水平位置随纸条随机偏移，更像随手贴的） */
+    .note-paper::before {
+        content: '';
+        position: absolute;
+        top: -11px;
+        left: calc(50% + var(--tx, 0px));
+        width: 68px;
+        height: 22px;
+        transform: translateX(-50%) rotate(calc(var(--r, 0deg) * -0.5));
+        background: rgba(234, 220, 178, 0.55);
+        border-left: 1px dashed rgba(120, 100, 60, 0.2);
+        border-right: 1px dashed rgba(120, 100, 60, 0.2);
+        box-shadow: 0 1px 2px rgba(100, 80, 40, 0.14);
+    }
+
+    .note-paper:hover,
+    .note-paper:focus-visible {
+        z-index: 10;
+        box-shadow:
+            0 2px 4px rgba(100, 80, 40, 0.16),
+            0 14px 28px rgba(100, 80, 40, 0.2);
+        outline: none;
+    }
+
+    .note-paper:focus-visible {
+        border-color: var(--color-primary);
+    }
+
+    /* 被捡起时留下的“空位” */
+    .note-paper.is-lifted {
+        opacity: 0.3;
+        filter: saturate(0.5);
+        pointer-events: none;
+    }
+
+    .note-date {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        color: color-mix(in srgb, var(--paper-ink) 48%, transparent);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .note-text {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+        margin-top: 0.3rem;
+        font-size: 0.875rem;
+        line-height: 1.65;
+        white-space: pre-line;
+    }
+
+    /* ===== 拾起弹层 ===== */
+    .note-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .note-modal.open {
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .note-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .note-modal.open .note-backdrop {
+        opacity: 1;
+    }
+
+    .note-stage {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 1.25rem;
+    }
+
+    .note-card {
+        position: relative;
+        width: min(560px, 100%);
+        max-height: min(480px, 80vh);
+        overflow-y: auto;
+        padding: 2rem 2rem 1.75rem;
+        background: var(--paper-bg);
+        color: var(--paper-ink);
+        border: 1px solid var(--paper-edge);
+        border-radius: 14px;
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.18),
+            0 32px 80px rgba(0, 0, 0, 0.38);
+    }
+
+    /* 弹层纸条上同样贴一截胶带 */
+    .note-card::before {
+        content: '';
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        width: 96px;
+        height: 24px;
+        transform: translateX(-50%) rotate(-1.5deg);
+        background: rgba(234, 220, 178, 0.55);
+        border-left: 1px dashed rgba(120, 100, 60, 0.2);
+        border-right: 1px dashed rgba(120, 100, 60, 0.2);
+        box-shadow: 0 1px 2px rgba(100, 80, 40, 0.14);
+    }
+
+    .note-close {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.6rem;
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 9999px;
+        color: color-mix(in srgb, var(--paper-ink) 55%, transparent);
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .note-close:hover,
+    .note-close:focus-visible {
+        background: color-mix(in srgb, var(--paper-ink) 10%, transparent);
+        color: var(--paper-ink);
+        outline: none;
+    }
+
+    .note-modal-date {
+        display: block;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        color: color-mix(in srgb, var(--paper-ink) 48%, transparent);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .note-modal-body {
+        margin-top: 0.6rem;
+        font-size: 1.05rem;
+        line-height: 1.9;
+        white-space: pre-line;
+        overflow-wrap: break-word;
+    }
+
+    /* ===== 暗色：夜里桌面上的纸条，纸色不变、桌面加深；每色微压暗 ===== */
+    .dark .pc-0 { --paper-bg: #f7f0dd; }
+    .dark .pc-1 { --paper-bg: #f3e9b8; }
+    .dark .pc-2 { --paper-bg: #e0ecf3; }
+    .dark .pc-3 { --paper-bg: #e1ecda; }
+    .dark .pc-4 { --paper-bg: #f5e1db; }
+    .dark .pc-5 { --paper-bg: #e9e3f2; }
+
+    .dark .notes-desk-outer {
+        border-color: rgba(51, 65, 85, 0.8);
+        background:
+            radial-gradient(rgba(56, 189, 200, 0.07) 1px, transparent 1.5px) 0 0 / 26px 26px,
+            linear-gradient(160deg, #131c2e, #0f1626);
+    }
+
+    .dark .note-paper,
+    .dark .note-card {
+        border-color: color-mix(in srgb, var(--paper-ink) 22%, transparent);
+    }
+
+    .dark .note-paper {
+        box-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.4),
+            0 8px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .dark .note-paper:hover,
+    .dark .note-paper:focus-visible {
+        box-shadow:
+            0 3px 6px rgba(0, 0, 0, 0.45),
+            0 16px 34px rgba(0, 0, 0, 0.6);
+    }
+
+    .dark .note-card {
+        box-shadow:
+            0 6px 16px rgba(0, 0, 0, 0.5),
+            0 36px 90px rgba(0, 0, 0, 0.65);
+    }
+
+    .dark .note-backdrop {
+        background: rgba(2, 6, 23, 0.7);
+    }
+</style>
+
+<script>
+    // 模块级状态：view transitions 换页时 <script> 不重新执行，
+    // 绑定逻辑全部走 setupNotesDesk()（astro:page-load）。
+    // 注意：不依赖动画 onfinish/oncancel 维护状态——无渲染帧的环境
+    // （无头浏览器、后台标签页）里动画可能跑完但事件永不派发，会卡死状态机。
+    let activePaper: HTMLElement | null = null;
+    let flight: Animation | null = null;
+    let flightTimer: number | null = null;
+
+    const prefersReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /** 取消进行中的飞行动画及其兜底定时器（不触发其副作用） */
+    function clearFlight() {
+        if (flightTimer !== null) {
+            window.clearTimeout(flightTimer);
+            flightTimer = null;
+        }
+        if (flight) {
+            flight.onfinish = null;
+            flight.oncancel = null;
+            flight.cancel();
+            flight = null;
+        }
+    }
+
+    function setupNotesDesk() {
+        const desk = document.getElementById('notes-desk');
+        if (!desk || desk.dataset.bound) return;
+        desk.dataset.bound = '1';
+
+        const papers = Array.from(desk.querySelectorAll<HTMLElement>('.note-paper'));
+        const modal = document.getElementById('note-modal');
+        if (!modal || papers.length === 0) return;
+
+        papers.forEach((paper) => {
+            paper.addEventListener('click', () => openPaper(paper));
+        });
+
+        // 点击卡片以外的任意处（backdrop / stage 铺满全屏，真实落点都是它们）关闭；
+        // 卡片内部的点击冒泡上来时跳过，由内部按钮自行处理
+        modal.addEventListener('click', (e) => {
+            if (e.target instanceof Element && e.target.closest('.note-card')) return;
+            closePaper();
+        });
+        modal.querySelector('.note-close')?.addEventListener('click', closePaper);
+    }
+
+    function flightPose(paper: HTMLElement, card: HTMLElement) {
+        // 纸条带旋转，但旋转不改变中心点，按中心对齐计算位移
+        const from = paper.getBoundingClientRect();
+        const to = card.getBoundingClientRect();
+        const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+        const dy = from.top + from.height / 2 - (to.top + to.height / 2);
+        // 等比缩放：起点保持卡片自身宽高比，飞行中不拉伸变形
+        const s = Math.min(from.width / to.width, from.height / to.height);
+        // 纸条的散落旋转，起飞时随位移一起转正
+        const r = parseFloat(getComputedStyle(paper).getPropertyValue('--r')) || 0;
+        return { dx, dy, s, r };
+    }
+
+    function openPaper(paper: HTMLElement) {
+        if (activePaper) return;
+        const modal = document.getElementById('note-modal');
+        const card = document.getElementById('note-card');
+        const modalDate = document.getElementById('note-modal-date');
+        const modalBody = document.getElementById('note-modal-body');
+        if (!modal || !card || !modalDate || !modalBody) return;
+
+        const dateEl = paper.querySelector('.note-date');
+        const textEl = paper.querySelector('.note-text');
+        modalDate.textContent = dateEl?.textContent ?? '';
+        modalBody.textContent = textEl?.textContent ?? '';
+
+        // 卡片跟随纸条颜色：纸条飞起变卡片，颜色一致才像同一张纸
+        const pc = Array.from(paper.classList).find((c) => /^pc-\d+$/.test(c));
+        if (pc) {
+            card.classList.remove('pc-0', 'pc-1', 'pc-2', 'pc-3', 'pc-4', 'pc-5');
+            card.classList.add(pc);
+        }
+
+        activePaper = paper;
+        clearFlight();
+        paper.classList.add('is-lifted');
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        card.focus();
+
+        if (prefersReduced()) return;
+
+        // 等弹层从 visibility:hidden 变为可见后量取最终位置，再做 FLIP 入场。
+        // 先清掉卡片上所有残留动画（尤其上一轮 close 的 fill:forwards 位移），
+        // 否则 getBoundingClientRect 量到的是被旧动画钉住的位置。
+        requestAnimationFrame(() => {
+            card.getAnimations().forEach((a) => {
+                a.onfinish = null;
+                a.oncancel = null;
+                a.cancel();
+            });
+            flight = null;
+            const { dx, dy, s, r } = flightPose(paper, card);
+            flight = card.animate(
+                [
+                    { transform: `translate(${dx}px, ${dy}px) rotate(${r}deg) scale(${s})`, opacity: 0.85 },
+                    { transform: 'translate(0px, 0px) rotate(0deg) scale(1)', opacity: 1 }
+                ],
+                { duration: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+            );
+        });
+    }
+
+    function closePaper() {
+        if (!activePaper) return;
+        const modal = document.getElementById('note-modal');
+        const card = document.getElementById('note-card');
+        const paper = activePaper;
+        if (!modal || !card) return;
+
+        activePaper = null;
+        clearFlight();
+
+        const finish = () => {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            paper.classList.remove('is-lifted');
+            paper.focus();
+        };
+
+        if (prefersReduced()) {
+            finish();
+            return;
+        }
+
+        const { dx, dy, s, r } = flightPose(paper, card);
+        const animation = card.animate(
+            [
+                { transform: 'translate(0px, 0px) rotate(0deg) scale(1)', opacity: 1 },
+                { transform: `translate(${dx}px, ${dy}px) rotate(${r}deg) scale(${s})`, opacity: 0.85 }
+            ],
+            { duration: 360, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' }
+        );
+        flight = animation;
+        // onfinish 在无渲染帧的环境可能不派发，定时器兜底；settle 幂等
+        let settled = false;
+        const settle = () => {
+            if (settled) return;
+            settled = true;
+            if (flight === animation) flight = null;
+            if (flightTimer !== null) {
+                window.clearTimeout(flightTimer);
+                flightTimer = null;
+            }
+            // 撤销 fill:forwards 的结束位移，否则它会把卡片永久钉在纸条位置，
+            // 污染下一次打开时的 FLIP 测量与落点
+            animation.onfinish = null;
+            animation.oncancel = null;
+            animation.cancel();
+            finish();
+        };
+        animation.onfinish = settle;
+        animation.oncancel = settle;
+        flightTimer = window.setTimeout(settle, 360 + 150);
+    }
+
+    function onGlobalKeydown(e: KeyboardEvent) {
+        if (e.key !== 'Escape') return;
+        if (document.getElementById('note-modal')?.classList.contains('open')) closePaper();
+    }
+
+    document.addEventListener('keydown', onGlobalKeydown);
+    document.addEventListener('astro:page-load', setupNotesDesk);
+    // 离开页面前收起弹层、解除滚动锁定，避免状态被 view transition 带到下一页
+    document.addEventListener('astro:before-swap', () => {
+        const modal = document.getElementById('note-modal');
+        if (modal?.classList.contains('open')) {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        clearFlight();
+        activePaper?.classList.remove('is-lifted');
+        activePaper = null;
+        document.body.style.overflow = '';
+    });
+    setupNotesDesk();
+</script>
