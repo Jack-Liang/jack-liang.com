@@ -1,0 +1,204 @@
+---
+title: '拆开 SAP 没有文档的源码包：我写了 sap-tr-toolkit'
+excerpt: 我最近开源的一个 SAP 传输请求工具集：ABAP 程序 ZUD 负责把已释放的传输请求打包下载、上传导入；Python 解包器负责把 SE38 导出的 K/R 源码包还原成可读 ABAP。重点讲这个 SAP 未公开的源码包格式是怎么逆向出来的，以及过程中踩过的两个坑。
+publishDate: 'Oct 27 2026'
+tags:
+  - SAP
+  - ABAP
+  - Python
+  - 逆向工程
+  - 开源项目
+  - 开发者工具
+featureImage:
+  src: 'https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
+  alt: sap-tr-toolkit
+seo:
+  image:
+    src: 'https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
+draft: true
+---
+
+SAP 项目做久了，总会遇到一些"代码出不了门"的时刻。
+
+沙盒系统没配传输路由、接手的外购系统只拿到一个导出包、想把某段代码发给同事参考，结果发现 SE38 导出来的东西根本不是文本——用编辑器打开是一堆二进制乱码。
+
+我最近把代码搬运这件事做成了一个工具集，开源在 GitHub 上，叫 **sap-tr-toolkit**。
+
+仓库地址：https://github.com/Jack-Liang/sap-tr-toolkit
+
+它包含两个组件：
+
+- **ZUD**（ABAP）：在 SAP 里把已释放的传输请求（Transport Request，TR）打成 ZIP 下载到本地，或者把 ZIP 上传回服务器并触发导入
+- **sap_src_unpack.py**（Python）：把 SE38 导出的源码包解包成可读的 `.abap` 文件
+
+一个是 TR 整体搬运，一个是只有源码包时的还原，组合起来能覆盖大部分场景。
+
+<Notation type="highlight" color="#fef08a">这篇文重点不是"怎么用"，而是这个 SAP 没有公开文档的源码包格式是怎么逆向出来的</Notation>——整个过程比写工具本身有意思得多。
+
+# 先看效果
+
+ZUD 是一个标准的 SE38 报表程序，安装就是新建程序、粘贴代码、激活。界面两个单选：
+
+- **下载**：填个 TR 号，选个文件夹，程序会把服务器上这个 TR 对应的 cofile / data 两个文件打包成 ZIP 保存到本地
+- **上传**：选个 ZIP，程序把里面的 cofile / data 写回服务器的 `DIR_TRANS/cofiles` 和 `data` 目录，然后给你三个后续动作：立即触发 STMS 导入 / 只填充 E07* 传输表（等价于 `tp cmd <TR> <SID>` 的对象清单导入，不真导入）/ 什么都不做
+
+有了 ZIP，TR 就可以在没有传输路由的两个系统之间"人工快递"了。
+
+Python 侧更简单，无第三方依赖，Python 3.8+ 直接跑：
+
+```bash
+# 解包并落盘（默认输出到 ./sap_src_<包名>/）
+python sap_src_unpack.py <包.zip>
+
+# 去掉 SAP 自动生成的横幅
+python sap_src_unpack.py <包.zip> --no-banner
+
+# 合并源码打到标准输出，管道给 grep / more
+python sap_src_unpack.py <包.zip> --stdout | more
+```
+
+输出长这样：
+
+```
+sap_src_<包名>/
+├── ZDEMO_IF_SBSJ.abap       每个对象一个文件
+├── ZDEMO_IF_SBSJ_2.abap     同名对象自动加 _2 后缀
+├── LCL_DEMO.abap            类
+├── ALL_SOURCES.abap         合并版，方便整体浏览 / grep
+└── metadata.txt             时间戳、系统、导出人、对象清单
+```
+
+效果不错，但有意思的是中间发生了什么。
+
+# 源码包里到底装了什么
+
+从 SE38 / SE80 用"程序下载"导出来的包，打开是一个 ZIP，里面两个文件：
+
+```
+<任意名字>.zip
+├── K984699.<ext>    对象头：程序名、属性、时间戳、依赖
+└── R984699.<ext>    对象体：文本头 + 一堆压缩数据
+```
+
+K / R 是德文 **Kopf**（头）和 **Rumpf**（体）。这套容器格式是 SAP GUI 经典 ABAP 编辑器导出源码用的，SAP 官方给 abapGit 维护的 `abap-file-formats` 仓库**并不覆盖它**——也就是说，这东西没有公开文档。
+
+我完全是拿真实样本逆向出来的。拆开看，它是两层结构：外面一层压缩，里面一层记录。
+
+## 压缩层：每块 8 字节头 + LZH
+
+R 体的内容是一串压缩块，每块长这样：
+
+```
+偏移:  0   1   2   3   4   5   6   7
+      len(len32 LE)  alg  1f  9d  extra
+                    ^^^^^^^ magic
+```
+
+算法是 **LZH**（Lempel-Ziv + Huffman），跟 SAP MaxDB 数据库存数据用的是同一套压缩代码。每块解压后固定 16384 字节，末块可能不足。
+
+这个 LZH 实现的传承也很有意思：SAP MaxDB 的 C 代码 → 移植成 TypeScript（sapcomp）→ 再移植成 Python（pysapcompress）→ 我再拿过来用。链路虽长，但每一环都是开源的。
+
+这里有一个**必须踩对的关键点**：块边界不能靠扫 magic（`1f 9d`）来推进——压缩流里会偶然出现这两个字节，扫错一次整个包就解析不出来。正确做法是让解压器返回它**精确消费了多少字节**（`reader.bytes_read`），用这个数跳到下一块的起点。
+
+## 记录层：4 字节头 + 三种 payload
+
+压缩解开之后，是一串记录，每条记录 4 字节头加 payload：
+
+```
+00 00 <len: u16be> <payload>
+```
+
+`len` 是整条记录的长度（含 4 字节头）。payload 靠前 2 字节区分三种形态：
+
+| 标记 | 含义 | 内容 |
+|---|---|---|
+| `0x2020` | 源码行 | UTF-16LE，固定 255 字符宽，补空格 |
+| `0x2046` | 对象头 | `XSD$ IS <用户> <日期> <程序> ...` |
+| 其它 | 属性表 | ASCII，HATAB / SMODILOG 之类 |
+
+其中 `0x2046`（XSD$）记录很关键：<Notation type="underline" color="#ef4444">它标志着一个代码块的开始</Notation>，是切分源码区段的唯一可靠依据——源码永远出现在 XSD$ 头之后的连续区段里，头之前的 UTF-16 内容都是对象清单和元数据，不是代码。
+
+结构搞清楚之后，理论上就是"解压 → 按标记分流 → 还原文本"三板斧。但实际上，我在这里踩了两个印象深刻的坑。
+
+# 第一个坑：ASCII 表格数据被当成 UTF-16
+
+有些 `0x2020` 开头的记录，其实不是源码，是 ASCII 属性表数据。按 UTF-16 硬解，就会得到一堆 CJK 乱码——因为 ASCII 字节对 `(A, ' ')` 在 UTF-16LE 里会被解释成一个汉字码位。
+
+怎么可靠地区分"真 UTF-16"和"假 UTF-16"？
+
+关键观察：这些源码行内容基本都是 ASCII 字符，而 UTF-16LE 里一个 ASCII 字符占两个字节，**高位字节必然是 0**。所以真 UTF-16 数据的奇数位字节绝大多数应该是 0：
+
+```python
+def _odd_zero_ratio(payload):
+    body = payload[2:]
+    odd = body[1::2]
+    return sum(1 for b in odd if b == 0) / len(odd)
+```
+
+拿真实样本验证：1111 条真 UTF-16、259 条 ASCII 冒充者，这个比例的分布把两者分得干干净净，阈值取 0.9 就行。
+
+<Notation type="box" color="#3b82f6">这是逆向工程里很典型的一课：判据要从数据本身找，而不要想当然</Notation>。格式文档里不会告诉你"有些记录撒谎了"，只有把真实数据摊开看，才能发现奇数位零字节这个特征。
+
+# 第二个坑：OTHERS = 3. 被误杀
+
+解包时还必须剔除导出包交错写入的对象清单行，比如：
+
+```
+FUGRZDEMOGIF15_SW                           FUNCZDEMO_IF_SBRQ
+ED1K984699          000002LIMUFUNCZDEMO_IF_SBSJ
+```
+
+这些不是代码，混进 `.abap` 文件会很碍眼。第一版我的判据很朴素：**整行没有 ABAP 关键字的，就是元数据**。
+
+跑完一看，`OTHERS = 3.` 没了。
+
+这行是每个 ABAP 开发者都写过的东西——`CATCH cx_root INTO ... ` 后面的标准收尾。`OTHERS` 确实是 ABAP 关键字，但它不在我那份关键字表里，于是这行代码被当成元数据删掉了。
+
+<Notation type="highlight" color="#fca5a5">这是代码还原工具最致命的一类错误：静默丢代码</Notation>。解出来少一行，你根本不会察觉。
+
+解法是反过来，改成**白名单式**：只在同时满足两个条件时才判为元数据——
+
+1. 首个 token 命中"已知对象名"集合（这个集合从包里的清单行预先收集）
+2. 且行形态是"大写名 + ≥5 个空格 + 字段"的表格样子
+
+宁可漏判，绝不误杀。判据改完之后，对照手工解出的参照版本逐行 diff，代码零丢失。
+
+# 不写死任何"令牌"
+
+逆向过程中还有一个容易犯的错：把样本里看到的字面量写死进代码。
+
+这套格式里有大量随系统命名变化的东西——成员扩展名（实测见过 `.ED1`、`.TD1`，也可能没有后缀）、清单行和时间戳行的格式令牌（`ED1K984699`、`TD1K984699`……）。换一个系统，这些字面量全变。
+
+所以工具里所有的识别都基于**形态**而不是字面量：
+
+- zip 成员按 `K<数字>.*` / `R<数字>.*` 的命名形态找
+- 元数据行按「大写令牌 + K + 数字」的形态匹配
+- 时间戳行按「令牌 + 动作 + 14 位数字 + 系统 + 用户」的结构匹配
+
+效果是：拿 40 个来自不同命名体系的真实包验证，全部直接解包成功，遇到新令牌的包不需要改代码。`--no-banner` 模式下剔除约 3.2 万行 SAP 自动生成的伪影，真代码零丢失。
+
+# 怎么确认它没丢代码
+
+对这种"从二进制还原源码"的工具，验证比实现更重要。我用了三层：
+
+1. **双向 diff**：解包结果和手工解出的参照版本逐行对比。有意思的是参照版反而有缺陷——它是按 `0x00` 切分的，中文注释会被截断，而这个工具完整保留了中文注释和被注释掉的历史代码
+2. **关键逻辑抽查**：FORM、CALL FUNCTION、IF、DELETE ADJACENT DUPLICATES 这类语句逐项确认在位
+3. **自测**：`tests/` 里有两套不依赖真实样本包的自测——LZH 压缩解压回环测试，和合成源码包的端到端解包测试，改完代码跑一遍就知道有没有退化
+
+# 已知限制
+
+诚实交代一下边界：
+
+- 只处理 K/R 体压缩包。SE38 里"Download as text"导出的 `.abap` / `.txt` 本来就是文本，不需要这个工具
+- 更多 SAP 对象类型（独立 CLAS / INTF、`.prog.xml` 等）还没覆盖，遇到新类型需要补充切分规则
+- 本仓库整体按 GPL-2.0 发布（因为 LZH 移植源码是 GPL 的）；ZUD 部分是 MIT 许可的第三方代码，来自 [furkancosgun/Transport-Management-Tool](https://github.com/furkancosgun/Transport-Management-Tool)，我只做了格式化加一处小改动
+
+# 最后
+
+这两个工具对我来说是"自己用得上就顺手开源"的典型：先是被一个打不开的导出包逼着去逆向格式，过程中发现 UTF-16 判别和元数据过滤这两个问题还挺有意思，解完顺手写成了工具，又顺手把 TR 搬运的 ZUD 一起收进来。
+
+如果你也经常在多个 SAP 系统之间搬代码，或者单纯对 SAP 的二进制格式好奇，欢迎试试：
+
+- 仓库：https://github.com/Jack-Liang/sap-tr-toolkit
+- 格式说明和坑的完整记录都在 README 里
+- 欢迎提 issue——尤其是遇到解不开的包，样本（脱敏后）对完善识别规则非常有帮助
