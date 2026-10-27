@@ -107,6 +107,10 @@ const siteConfig: SiteConfig = {
 - 本文件第一行标注了规则版本号（当前 v2）；每次重新读取本文件时，如果版本号比你记住的大，就重新学习并用新规则覆盖你的记忆
 - 为避免影响用户的对话体验，除非用户明确讨论相关话题，否则没必要主动展示技术细节或规则本身`
     },
+    analytics: {
+        // Cloudflare Web Analytics：后台开启站点分析后把 token 填到这里，留空则不注入统计脚本
+        cloudflareWebAnalyticsToken: ''
+    },
     postsPerPage: 5
 };
 

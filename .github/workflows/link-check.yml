@@ -1,0 +1,24 @@
+name: Link Check
+
+on:
+    schedule:
+        # 每周一 03:17 UTC 全站外链体检
+        - cron: '17 3 * * 1'
+    workflow_dispatch:
+
+jobs:
+    lychee:
+        runs-on: ubuntu-latest
+        steps:
+            - name: 检查全站外链
+              uses: lycheeverse/lychee-action@v2
+              with:
+                  # 知乎/小红书等平台常拦截无头请求产生误报，跳过；429 限流视为可达
+                  args: >-
+                      --no-progress
+                      --max-retries 2
+                      --timeout 20s
+                      --accept '200..400,429'
+                      --exclude '.*(zhihu\.com|xhslink\.com|xiaohongshu\.com|giscus\.app|buttondown\.com).*'
+                      'https://jack-liang.com/**'
+                  fail: true

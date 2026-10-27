@@ -61,6 +61,11 @@ export type ForAgent = {
     agentProtocol?: string;
 };
 
+export type Analytics = {
+    /** Cloudflare Web Analytics token（Cloudflare 后台开启站点分析后填入；留空则页面不注入统计脚本） */
+    cloudflareWebAnalyticsToken?: string;
+};
+
 export type SiteConfig = {
     logo?: ImageInput;
     title: string;
@@ -72,5 +77,6 @@ export type SiteConfig = {
     hero?: Hero;
     subscribe?: Subscribe;
     forAgent?: ForAgent;
+    analytics?: Analytics;
     postsPerPage?: number;
 };

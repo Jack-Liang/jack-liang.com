@@ -26,7 +26,7 @@ Jack Liang 的个人网站——博客、拾光与随想，基于
   giscus 评论主题同步
 - 全站回到顶部、404 页、Pagefind
   站内搜索、首页内容统计、随机一篇（首页/博客列表/404）
-- RSS 全文输出（博客 + 拾光 + 随想，分类订阅）
+- RSS 全文输出：混合主 feed `/rss.xml`，分类订阅 `/rss/blog.xml`、`/rss/shiguang.xml`、`/rss/notes.xml`
 - SEO：canonical URLs、OpenGraph、Twitter Card、站点地图、JSON-LD
 - Markdown & MDX 支持，Rough Notation 手绘标注组件
 - Figtree 可变字体（`@fontsource-variable/figtree`）：woff2 预加载，字体路径通过

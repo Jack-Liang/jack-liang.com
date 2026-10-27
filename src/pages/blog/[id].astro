@@ -66,6 +66,11 @@ const jsonLd = {
             class="fixed inset-x-0 top-0 z-50 h-[3px] origin-left bg-primary dark:bg-primary-dark"
             style="transform: scaleX(0)"
         ></div>
+        {post.data.draft && (
+            <div class="mx-auto max-w-3xl mb-10 rounded-lg border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-800 dark:border-amber-500/40 dark:bg-amber-900/25 dark:text-amber-200">
+                🚧 草稿预览：本文尚未发布，不在列表、RSS、站内搜索和站点地图中，仅可通过直链访问。
+            </div>
+        )}
         <article class="relative max-w-6xl mx-auto mb-12 sm:mb-16">
             <div class="max-w-3xl mx-auto mb-6">
                 <a
@@ -274,6 +279,33 @@ const jsonLd = {
         .prose pre:hover .code-copy-btn {
             opacity: 1;
         }
+
+        /* 长代码折叠：收起时限高，展开按钮悬浮在代码块底部边缘 */
+        .prose pre.code-collapsed {
+            max-height: 660px;
+            overflow: hidden;
+        }
+        .code-expand-bar {
+            display: flex;
+            justify-content: center;
+            margin: -1.4rem 0 1.8rem;
+            position: relative;
+            z-index: 1;
+        }
+        .code-expand-btn {
+            padding: 0.25rem 1rem;
+            font-size: 0.75rem;
+            border-radius: 9999px;
+            color: #d8dee9;
+            background: rgba(49, 54, 63, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .code-expand-btn:hover {
+            background: rgba(80, 88, 100, 0.95);
+        }
         .code-copy-btn:hover {
             background: rgba(255, 255, 255, 0.18);
         }
@@ -368,12 +400,36 @@ const jsonLd = {
             });
         }
 
+        // 长代码折叠：超高代码块限高收起，底部按钮展开/收起
+        function bindCodeCollapse() {
+            document.querySelectorAll<HTMLElement>('.prose pre').forEach((pre) => {
+                if (pre.dataset.collapseBound) return;
+                pre.dataset.collapseBound = '1';
+                if (pre.scrollHeight <= 660) return;
+                pre.classList.add('code-collapsed');
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'code-expand-btn';
+                btn.textContent = '展开全部';
+                btn.addEventListener('click', () => {
+                    const collapsed = pre.classList.toggle('code-collapsed');
+                    btn.textContent = collapsed ? '展开全部' : '收起';
+                });
+                const bar = document.createElement('div');
+                bar.className = 'code-expand-bar';
+                bar.appendChild(btn);
+                pre.insertAdjacentElement('afterend', bar);
+            });
+        }
+
         refreshToc();
         bindCopyButtons();
+        bindCodeCollapse();
         updateProgressBar();
         document.addEventListener('astro:page-load', () => {
             refreshToc();
             bindCopyButtons();
+            bindCodeCollapse();
             updateProgressBar();
         });
     </script>
