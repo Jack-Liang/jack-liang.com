@@ -1,6 +1,6 @@
 ---
 title: AJSON：ABAP 里的"柔性 JSON"引擎
-excerpt: "拆解 sbcgua/ajson 的实现原理与完整用法：如何复用 SAP 内置 sXML 的 JSON 模式完成解析，如何用「路径即主键」的扁平节点表做定位与序列化，以及路径寻址、映射过滤、ABAP 双向转换等核心用法与已知限制。"
+excerpt: '拆解 sbcgua/ajson 的实现原理与完整用法：如何复用 SAP 内置 sXML 的 JSON 模式完成解析，如何用「路径即主键」的扁平节点表做定位与序列化，以及路径寻址、映射过滤、ABAP 双向转换等核心用法与已知限制。'
 publishDate: 'Oct 20 2026'
 tags:
   - ABAP

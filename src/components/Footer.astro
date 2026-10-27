@@ -15,15 +15,12 @@ const isForAgentPage = Astro.url.pathname.replace(/\/+$/, '') === '/for-agent';
     <div class="max-w-5xl mx-auto">
         {!isForAgentPage && <AgentEntryCard class="mb-10" />}
         <div class="grid gap-10 sm:gap-8 md:grid-cols-3 md:divide-x md:divide-slate-200 md:dark:divide-slate-700">
-
             <!-- 品牌 -->
             <div class="flex flex-col items-center text-center md:items-start md:text-left md:pr-8">
                 <a href="/" class="inline-flex items-center gap-2 text-slate-900 dark:text-white" aria-label={siteConfig.title}>
-                    <span class="site-logo h-7 w-auto" set:html={logoSvg}></span>
+                    <span class="site-logo h-7 w-auto" set:html={logoSvg} />
                 </a>
-                <p class="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                    {siteConfig.description}
-                </p>
+                <p class="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{siteConfig.description}</p>
                 <p class="mt-4 text-xs tracking-wider uppercase text-slate-400 dark:text-slate-500">
                     © {currentYear} {siteConfig.title}
                 </p>
@@ -31,42 +28,31 @@ const isForAgentPage = Astro.url.pathname.replace(/\/+$/, '') === '/for-agent';
 
             <!-- 社交 -->
             <div class="flex flex-col items-center text-center md:px-8">
-                <h3 class="text-xs font-semibold tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">
-                    Follow
-                </h3>
-                {
-                    socialLinks.length > 0 && (
-                        <div class="mt-4 flex flex-wrap justify-center gap-3">
-                            {socialLinks.map((link) => (
-                                <SocialLink
-                                    {...link}
-                                    class="h-10 w-10 bg-white/70 text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary hover:text-white hover:shadow-md hover:ring-primary dark:bg-slate-700/60 dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-primary dark:hover:text-white dark:hover:ring-primary"
-                                />
-                            ))}
-                        </div>
-                    )
-                }
+                <h3 class="text-xs font-semibold tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">Follow</h3>
+                {socialLinks.length > 0 && (
+                    <div class="mt-4 flex flex-wrap justify-center gap-3">
+                        {socialLinks.map((link) => (
+                            <SocialLink
+                                {...link}
+                                class="h-10 w-10 bg-white/70 text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary hover:text-white hover:shadow-md hover:ring-primary dark:bg-slate-700/60 dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-primary dark:hover:text-white dark:hover:ring-primary"
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
             <!-- 次导航 -->
             <div class="flex flex-col items-center text-center md:items-end md:text-right md:pl-8">
-                <h3 class="text-xs font-semibold tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">
-                    Explore
-                </h3>
-                {
-                    secondaryNavLinks.length > 0 && (
-                        <nav class="mt-4 flex flex-col gap-2" aria-label="Footer navigation">
-                            {secondaryNavLinks.map((link) => (
-                                <a
-                                    class="text-sm text-slate-600 transition-colors hover:text-primary dark:text-slate-300 dark:hover:text-primary"
-                                    href={link.href}
-                                >
-                                    {link.text}
-                                </a>
-                            ))}
-                        </nav>
-                    )
-                }
+                <h3 class="text-xs font-semibold tracking-[0.2em] uppercase text-slate-400 dark:text-slate-500">Explore</h3>
+                {secondaryNavLinks.length > 0 && (
+                    <nav class="mt-4 flex flex-col gap-2" aria-label="Footer navigation">
+                        {secondaryNavLinks.map((link) => (
+                            <a class="text-sm text-slate-600 transition-colors hover:text-primary dark:text-slate-300 dark:hover:text-primary" href={link.href}>
+                                {link.text}
+                            </a>
+                        ))}
+                    </nav>
+                )}
             </div>
         </div>
     </div>

@@ -11,8 +11,7 @@ if (!config?.enabled) {
 }
 
 const cardTitle = config.cardTitle ?? '让 AI Agent 帮你追更';
-const cardText =
-    config.cardText ?? '复制一段提示词给 Claude / ChatGPT，它就会定期检查本站有没有新内容，有更新时主动提醒你。';
+const cardText = config.cardText ?? '复制一段提示词给 Claude / ChatGPT，它就会定期检查本站有没有新内容，有更新时主动提醒你。';
 const cardCta = config.cardCta ?? '前往配置';
 ---
 
@@ -39,9 +38,7 @@ const cardCta = config.cardCta ?? '前往配置';
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">{cardTitle}</h2>
-                        <span
-                            class="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
-                        >
+                        <span class="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
                             NEW
                         </span>
                     </div>

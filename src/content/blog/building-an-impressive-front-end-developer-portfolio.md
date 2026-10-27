@@ -11,7 +11,7 @@ featureImage:
   alt: Golden and blue geometrical shapes
 seo:
   image:
-    src: 'https://img.jack-liang.com/00-headImage/post-8.jpg' 
+    src: 'https://img.jack-liang.com/00-headImage/post-8.jpg'
     alt: Golden and blue geometrical shapes
 ---
 

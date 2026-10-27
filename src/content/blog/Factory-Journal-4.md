@@ -6,10 +6,10 @@ tags:
   - 驻厂日记
 featureImage:
   src: 'https://img.jack-liang.com/Factory-Journal/4.jpg'
-  alt: Factory Journal 4    
+  alt: Factory Journal 4
 seo:
   image:
-    src: 'https://img.jack-liang.com/Factory-Journal/4.jpg' 
+    src: 'https://img.jack-liang.com/Factory-Journal/4.jpg'
 ---
 
 这几日，南方的天像是被人用竿子戳了无数个窟窿，雨总是淅淅沥沥地下个不停。空气里满是潮气，黏糊糊的，衣服晾在屋里，总也干不透。地板踩上去滑溜溜的，稍不留神就要摔个趔趄。这样的天，最宜躺在屋里，听着雨打窗棂的声响，慢悠悠说些旧事。

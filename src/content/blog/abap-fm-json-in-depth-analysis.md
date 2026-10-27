@@ -31,8 +31,11 @@ abap_fm_json
 给出了一套完整、轻量的架构方案。我在[上一篇文章](/blog/dotabap-daily-recommendation-abap-fm-json/)中介绍了它的使用方法。本篇咱们来深入代码拆解它每一步的设计决策与实现。
 
 ---
+
 <!-- Start of Selection -->
+
 ## 目录
+
 1. [项目基本信息](#项目基本信息)
 2. [楔子：一条 URL](#楔子一条-url)
 3. [四个需要解决的问题](#四个需要解决的问题)
@@ -70,7 +73,9 @@ abap_fm_json
 10. [七、路由回顾](#七路由回顾)
 11. [八、安全](#八安全)
 12. [九、总结](#九总结)
+
 <!-- End of Selection -->
+
 ---
 
 ## 项目基本信息
@@ -127,12 +132,12 @@ Module）桥接到了 HTTP 世界**。
 
 要把一个 FM 通过 HTTP 暴露出去，必须解决四个问题：
 
-| # | 问题         | 描述                                                               |
-| - | ------------ | ------------------------------------------------------------------ |
-| 1 | **路由**     | URL 怎么对应到具体的 FM？                                          |
-| 2 | **参数映射** | HTTP 请求里的数据（query string + body），怎么塞进 FM 的参数结构？ |
-| 3 | **动态调用** | FM 名称是动态传入的，写代码时不知道 FM 的参数，怎么 CALL？         |
-| 4 | **结果返回** | FM 执行完了，EXPORT / CHANGING / TABLES 结果怎么写成 HTTP 响应？   |
+| #   | 问题         | 描述                                                               |
+| --- | ------------ | ------------------------------------------------------------------ |
+| 1   | **路由**     | URL 怎么对应到具体的 FM？                                          |
+| 2   | **参数映射** | HTTP 请求里的数据（query string + body），怎么塞进 FM 的参数结构？ |
+| 3   | **动态调用** | FM 名称是动态传入的，写代码时不知道 FM 的参数，怎么 CALL？         |
+| 4   | **结果返回** | FM 执行完了，EXPORT / CHANGING / TABLES 结果怎么写成 HTTP 响应？   |
 
 解决了这四个问题，就能把 FM 暴露成 http 服务了。
 
@@ -815,7 +820,7 @@ FM 内部可以通过这个结构体反向控制输出：
 ```abap
 FUNCTION Z_MY_REST_FUNC.
   CHANGING
-    _ICF_DATA TYPE ZICF_HANDLER_DATA. 
+    _ICF_DATA TYPE ZICF_HANDLER_DATA.
 
       _ICF_DATA-http_code = 201.
       _ICF_DATA-http_status = 'Created'.

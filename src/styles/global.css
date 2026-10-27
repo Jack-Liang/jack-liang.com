@@ -5,22 +5,22 @@
 
 @theme {
     --font-sans: 'Figtree Variable', system-ui, sans-serif;
-    
+
     --color-primary: #02738f;
     --color-primary-dark: #38b2c8;
-    
+
     --color-bg-page: #eef0f4;
     --color-bg-secondary: #f8fafc;
-    
+
     --color-text-primary: #334155;
     --color-text-secondary: #64748b;
     --color-text-muted: #94a3b8;
-    
+
     --color-border: #e2e8f0;
-    
+
     --shadow-avatar: 0 0 0 11px --alpha(var(--color-primary) / 15%), 0 0 0 22px --alpha(var(--color-primary) / 10%);
     --shadow-button: 0 0 0 6px --alpha(var(--color-primary) / 17.5%);
-    
+
     --color-prose-body: #334155;
     --color-prose-headings: #0f172a;
     --color-prose-lead: #64748b;
@@ -45,16 +45,16 @@
 
 .dark {
     color-scheme: dark;
-    
+
     --color-bg-page: #0f172a;
     --color-bg-secondary: #1e293b;
-    
+
     --color-text-primary: #f1f5f9;
     --color-text-secondary: #cbd5e1;
     --color-text-muted: #64748b;
-    
+
     --color-border: #334155;
-    
+
     --color-prose-body: #cbd5e1;
     --color-prose-headings: #f1f5f9;
     --color-prose-lead: #94a3b8;
@@ -92,13 +92,13 @@
         --tw-prose-th-borders: var(--color-prose-th-borders);
         --tw-prose-td-borders: var(--color-prose-td-borders);
     }
-    
+
     .prose a {
         @apply text-prose-links underline decoration-1 underline-offset-2 hover:no-underline;
     }
-    
+
     .prose blockquote {
-        @apply not-italic rounded-r-lg border-l-4 border-l-primary bg-primary/5 py-3 pl-5 pr-4 dark:border-l-primary-dark;
+        @apply border-l-primary bg-primary/5 dark:border-l-primary-dark rounded-r-lg border-l-4 py-3 pr-4 pl-5 not-italic;
         quotes: none;
     }
 
@@ -109,7 +109,7 @@
     .prose blockquote p:last-of-type {
         margin-bottom: 0;
     }
-    
+
     article > figure > img {
         max-height: 500px;
         width: 100%;
@@ -118,7 +118,7 @@
         object-fit: cover;
         object-position: top;
     }
-    
+
     .dark article > figure > img:not(.keep-original-colors) {
         filter: brightness(0.85) contrast(0.95);
     }

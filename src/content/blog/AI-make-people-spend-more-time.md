@@ -11,7 +11,7 @@ featureImage:
   alt: 头图
 seo:
   image:
-    src: 'https://images.pexels.com/photos/16053029/pexels-photo-16053029.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' 
+    src: 'https://images.pexels.com/photos/16053029/pexels-photo-16053029.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'
 ---
 
 作为一个日常写代码的开发者，我使用**大模型辅助编程**一两年了，最近才发现一个很反直觉的现象：本来以为AI会帮我减少**编码时间**，结果算下来，我花在coding上的总时间不仅没降，反而比之前还多了。
@@ -23,7 +23,6 @@ seo:
 ---
 
 ## 一、**能力释放悖论**：门槛降了，但你想做的事变多了
-
 
 第一个变化非常直观：大模型把**开发门槛**拉低之后，我们能落地的想法变多了。
 
@@ -58,6 +57,7 @@ seo:
 说了这么多，不是要否定AI编程的价值，而是我们一开始对它的期待就错了：我们默认AI应该「减少编码时间」，但实际上，AI改变的是**编码时间的结构**。
 
 从目前的实践和研究来看，对个体开发者来说，比较合理的定位是两个方向：
+
 1. 把大模型当「**入门工具**」，不是「**日常改bug工具**」：用AI降低陌生框架、陌生语言的入门门槛，帮你快速试错——比如我之前想快速搭一个Astro个人站，本身不熟悉这个框架，靠AI也能快速出可用的版本，这个场景下AI的收益远大于成本。
 2. **简单任务**自己上，**复杂任务**拆碎了给AI做：小步快跑，把大需求拆成**原子化的小任务**，一次只给AI一个明确目标，能减少80%的试错成本。
 
@@ -68,6 +68,6 @@ seo:
 ### 参考文献
 
 - DevData. (2025). 2025中国研发效能基准报告.
-- Zhang, Y., et al. (2026). The Heterogeneous Impact of AI Code Assistants on Developer Productivity. *Science*, 391(6814), 1234-1240.
+- Zhang, Y., et al. (2026). The Heterogeneous Impact of AI Code Assistants on Developer Productivity. _Science_, 391(6814), 1234-1240.
 - Y Combinator. (2024). Vibe Coding: A Practical Guide to AI Programming.
 - OpenClaw. (2024). Independent Developer Ecosystem Report 2024.

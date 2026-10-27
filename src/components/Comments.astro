@@ -14,9 +14,9 @@ const { title = '评论' } = Astro.props;
 </section>
 
 <script is:inline>
-    (function() {
+    (function () {
         const giscusTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-        
+
         const script = document.createElement('script');
         script.src = 'https://giscus.app/client.js';
         script.setAttribute('data-repo', 'Jack-Liang/jack-liang.com');
@@ -33,31 +33,28 @@ const { title = '评论' } = Astro.props;
         script.setAttribute('data-loading', 'lazy');
         script.crossOrigin = 'anonymous';
         script.async = true;
-        
+
         const container = document.querySelector('.giscus');
         if (container) {
             container.appendChild(script);
         }
-        
+
         function updateGiscusTheme(isDark) {
             const iframe = document.querySelector('iframe.giscus-frame');
             if (iframe) {
-                iframe.contentWindow.postMessage(
-                    { giscus: { setConfig: { theme: isDark ? 'dark' : 'light' } } },
-                    'https://giscus.app'
-                );
+                iframe.contentWindow.postMessage({ giscus: { setConfig: { theme: isDark ? 'dark' : 'light' } } }, 'https://giscus.app');
             }
         }
-        
-        document.addEventListener('theme-change', function(e) {
+
+        document.addEventListener('theme-change', function (e) {
             updateGiscusTheme(e.detail.isDark);
         });
-        
-        const observer = new MutationObserver(function() {
+
+        const observer = new MutationObserver(function () {
             const isDark = document.documentElement.classList.contains('dark');
             updateGiscusTheme(isDark);
         });
-        
+
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     })();
 </script>

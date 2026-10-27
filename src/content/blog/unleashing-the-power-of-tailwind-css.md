@@ -11,9 +11,10 @@ featureImage:
   alt: Blue shapes on black background
 seo:
   image:
-    src: 'https://img.jack-liang.com/00-headImage/post-7.jpg' 
+    src: 'https://img.jack-liang.com/00-headImage/post-7.jpg'
 draft: true
 ---
+
 在瞬息万变的 Web 开发世界中，紧跟最新趋势和工具至关重要。近年来备受瞩目的工具之一就是 Tailwind CSS。Tailwind CSS 不仅仅是一个 CSS 框架；它是一个实用优先的框架，彻底改变了开发者编写和管理样式的方式。在本文中，我们将深入探讨 Tailwind CSS 的方方面面，以及它为何成为现代 Web 开发的变革者。
 
 ## 什么是 Tailwind CSS？

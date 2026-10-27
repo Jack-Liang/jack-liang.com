@@ -15,7 +15,20 @@ type Props = ImageInput & {
     objectPosition?: string;
 };
 
-const { src, alt = "", class: className, loading = "lazy", fetchpriority, decoding = "async", objectPosition, width, height, widths, sizes, ...rest } = Astro.props as Props;
+const {
+    src,
+    alt = '',
+    class: className,
+    loading = 'lazy',
+    fetchpriority,
+    decoding = 'async',
+    objectPosition,
+    width,
+    height,
+    widths,
+    sizes,
+    ...rest
+} = Astro.props as Props;
 
 // 将 objectPosition 转换为 Tailwind class
 const objectPositionClass = objectPosition ? `object-[${objectPosition}]` : 'object-center';
@@ -46,21 +59,29 @@ const srcset = canResize ? widthsArr.map((w) => `${cfTransform(stringSrc, w)} ${
 const resolvedSrc = canResize ? cfTransform(stringSrc, Math.max(...widthsArr)) : stringSrc;
 ---
 
-{
-    typeof src === 'string' ? (
-        <img
-            class={`object-cover ${objectPositionClass} ${className}`}
-            src={resolvedSrc}
-            srcset={srcset}
-            sizes={sizes}
-            alt={alt}
-            loading={loading}
-            decoding={decoding}
-            width={width}
-            height={height}
-            fetchpriority={fetchpriority}
-        />
-    ) : (
-        <Image class={`object-cover ${objectPositionClass} ${className}`} src={src} alt={alt} loading={loading} fetchpriority={fetchpriority} decoding={decoding} widths={widths} sizes={sizes} {...rest} />
-    )
-}
+{typeof src === 'string' ? (
+    <img
+        class={`object-cover ${objectPositionClass} ${className}`}
+        src={resolvedSrc}
+        srcset={srcset}
+        sizes={sizes}
+        alt={alt}
+        loading={loading}
+        decoding={decoding}
+        width={width}
+        height={height}
+        fetchpriority={fetchpriority}
+    />
+) : (
+    <Image
+        class={`object-cover ${objectPositionClass} ${className}`}
+        src={src}
+        alt={alt}
+        loading={loading}
+        fetchpriority={fetchpriority}
+        decoding={decoding}
+        widths={widths}
+        sizes={sizes}
+        {...rest}
+    />
+)}

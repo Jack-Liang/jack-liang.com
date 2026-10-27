@@ -33,12 +33,8 @@ const seoDescription = '复制 3 行消息发给 Claude、ChatGPT 等 AI 助手�
                     <span aria-hidden="true">🤖</span>
                     For Agent
                 </div>
-                <h1 class="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
-                    {pageTitle}
-                </h1>
-                <p class="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-400 sm:text-lg">
-                    {pageIntro}
-                </p>
+                <h1 class="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">{pageTitle}</h1>
+                <p class="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-400 sm:text-lg">{pageIntro}</p>
             </header>
 
             <!-- Steps 指示器 -->
@@ -49,12 +45,16 @@ const seoDescription = '复制 3 行消息发给 Claude、ChatGPT 等 AI 助手�
                 </div>
                 <span class="h-px w-10 bg-slate-300 dark:bg-slate-700"></span>
                 <div class="flex items-center gap-2 opacity-80">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-xs font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">2</span>
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-xs font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                        2
+                    </span>
                     <span class="text-slate-600 dark:text-slate-400">发给 AI 助手</span>
                 </div>
                 <span class="h-px w-10 bg-slate-300 dark:bg-slate-700"></span>
                 <div class="flex items-center gap-2 opacity-80">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-xs font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">3</span>
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-xs font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                        3
+                    </span>
                     <span class="text-slate-600 dark:text-slate-400">等下次对话提醒</span>
                 </div>
             </div>
@@ -62,7 +62,9 @@ const seoDescription = '复制 3 行消息发给 Claude、ChatGPT 等 AI 助手�
             <!-- Step 1 卡片：复制消息 + 复制按钮 -->
             <section class="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-8">
                 <div class="mb-4 flex items-center gap-2">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-sm font-bold text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">1</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-sm font-bold text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+                        1
+                    </span>
                     <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">复制 3 行消息</h2>
                 </div>
                 <p class="mb-5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
@@ -96,17 +98,25 @@ const seoDescription = '复制 3 行消息发给 Claude、ChatGPT 等 AI 助手�
             <div class="mb-8 grid gap-4 sm:grid-cols-2">
                 <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-6">
                     <div class="mb-3 flex items-center gap-2">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sm font-bold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">2</span>
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sm font-bold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                            2
+                        </span>
                         <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">粘贴给 AI 助手</h2>
                     </div>
                     <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                        Claude、ChatGPT、Kimi、通义千问……只要能联网的 AI 都行。AI 读到消息后会自动去读完订阅规则，然后回复你一句：<em class="not-italic rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200">"没问题，之后如果有新内容我会先告诉你……"</em>。
+                        Claude、ChatGPT、Kimi、通义千问……只要能联网的 AI 都行。AI 读到消息后会自动去读完订阅规则，然后回复你一句：
+                        <em class="not-italic rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200">
+                            "没问题，之后如果有新内容我会先告诉你……"
+                        </em>
+                        。
                     </p>
                 </section>
 
                 <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-6">
                     <div class="mb-3 flex items-center gap-2">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">3</span>
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            3
+                        </span>
                         <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">下次对话前先通知</h2>
                     </div>
                     <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
@@ -124,8 +134,7 @@ const seoDescription = '复制 3 行消息发给 Claude、ChatGPT 等 AI 助手�
     (() => {
         /** 把模板中的 {{BASE_URL}} 替换为当前页面实际 origin。 */
         function resolveWithOrigin(template: string): string {
-            const origin =
-                (typeof window !== 'undefined' && window.location && window.location.origin) || '';
+            const origin = (typeof window !== 'undefined' && window.location && window.location.origin) || '';
             return template.replace(/\{\{BASE_URL\}\}/g, origin);
         }
 
@@ -171,23 +180,11 @@ const seoDescription = '复制 3 行消息发给 Claude、ChatGPT 等 AI 助手�
 
             function flashSuccess() {
                 btnEl.textContent = successLabel;
-                btnEl.classList.add(
-                    'ring-2',
-                    'ring-emerald-400',
-                    'ring-offset-2',
-                    'dark:ring-offset-slate-900',
-                    'brightness-105'
-                );
+                btnEl.classList.add('ring-2', 'ring-emerald-400', 'ring-offset-2', 'dark:ring-offset-slate-900', 'brightness-105');
                 setTimeout(() => {
                     // 恢复固定文案，避免连点时把「已复制 ✓」当成默认标签
                     btnEl.textContent = defaultLabel;
-                    btnEl.classList.remove(
-                        'ring-2',
-                        'ring-emerald-400',
-                        'ring-offset-2',
-                        'dark:ring-offset-slate-900',
-                        'brightness-105'
-                    );
+                    btnEl.classList.remove('ring-2', 'ring-emerald-400', 'ring-offset-2', 'dark:ring-offset-slate-900', 'brightness-105');
                 }, 3000);
             }
 

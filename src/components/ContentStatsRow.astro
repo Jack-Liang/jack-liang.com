@@ -25,9 +25,7 @@ allNotes.sort((a, b) => b.publishDate.getTime() - a.publishDate.getTime());
 const notesLatest = allNotes[0]?.excerpt;
 
 // --- 文章 ---
-const posts = (await getCollection('blog'))
-    .filter(({ data }) => !data.draft)
-    .sort(sortPostsByDateDesc);
+const posts = (await getCollection('blog')).filter(({ data }) => !data.draft).sort(sortPostsByDateDesc);
 const blogLatest = posts[0]?.data.title;
 
 // --- 写作总字数（已发布文章 + 随想）---
@@ -70,25 +68,19 @@ const items: StatItem[] = [
 
 <nav class="max-w-6xl mx-auto" aria-label="内容栏目">
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {
-            items.map((item) => (
-                <a
-                    href={item.href}
-                    class="group rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-primary dark:border-slate-700 dark:bg-slate-800/60"
-                >
-                    <div class="flex items-baseline justify-between">
-                        <h3 class="text-sm font-semibold tracking-wider text-slate-900 dark:text-slate-100">
-                            {item.label}
-                        </h3>
-                        <span class="text-xs text-slate-400 dark:text-slate-500">
-                            {item.count} {item.unit}{item.suffix}
-                        </span>
-                    </div>
-                    <p class="mt-1.5 truncate text-sm text-slate-500 dark:text-slate-400">
-                        {item.latest}
-                    </p>
-                </a>
-            ))
-        }
+        {items.map((item) => (
+            <a
+                href={item.href}
+                class="group rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-primary dark:border-slate-700 dark:bg-slate-800/60"
+            >
+                <div class="flex items-baseline justify-between">
+                    <h3 class="text-sm font-semibold tracking-wider text-slate-900 dark:text-slate-100">{item.label}</h3>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">
+                        {item.count} {item.unit}{item.suffix}
+                    </span>
+                </div>
+                <p class="mt-1.5 truncate text-sm text-slate-500 dark:text-slate-400">{item.latest}</p>
+            </a>
+        ))}
     </div>
 </nav>

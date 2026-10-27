@@ -53,9 +53,7 @@ async function loadFont(file: string, urls: string[]): Promise<Buffer> {
 let fontsPromise: Promise<{ data: Buffer; weight: number }[]> | null = null;
 function loadFonts() {
     if (!fontsPromise) {
-        fontsPromise = Promise.all(
-            FONT_FILES.map(async ({ file, weight, urls }) => ({ data: await loadFont(file, urls), weight }))
-        );
+        fontsPromise = Promise.all(FONT_FILES.map(async ({ file, weight, urls }) => ({ data: await loadFont(file, urls), weight })));
     }
     return fontsPromise;
 }

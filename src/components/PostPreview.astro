@@ -3,9 +3,9 @@ import { type CollectionEntry } from 'astro:content';
 import CustomImage from './CustomImage.astro';
 import FormattedDate from './FormattedDate.astro';
 
-const { post, imageMode = 'small' } = Astro.props as { 
-    post: CollectionEntry<'blog'>; 
-    imageMode?: 'small' | 'large'; 
+const { post, imageMode = 'small' } = Astro.props as {
+    post: CollectionEntry<'blog'>;
+    imageMode?: 'small' | 'large';
 };
 const { title, publishDate, updatedDate, featureImage, excerpt, isFeatured, tags } = post.data;
 const isLargeImage = imageMode === 'large';
@@ -14,63 +14,55 @@ const isLargeImage = imageMode === 'large';
 <article class:list={['mb-12 post-card sm:mb-16', isLargeImage ? 'has-large-image' : '']}>
     <header class="post-card-header">
         <div class="mb-2 text-sm tracking-wider uppercase text-slate-500">
-            {
-                isFeatured && (
-                    <>
-                        <span class="text-primary">精选</span>
-                        {' / '}
-                    </>
-                )
-            }
+            {isFeatured && (
+                <>
+                    <span class="text-primary">精选</span>
+                    {' / '}
+                </>
+            )}
             <FormattedDate date={publishDate} />
-            {
-                updatedDate && (
-                    <>
-                        {' '}
-                        <span>
-                            (Updated on <FormattedDate date={updatedDate} />)
-                        </span>
-                    </>
-                )
-            }
+            {updatedDate && (
+                <>
+                    {' '}
+                    <span>
+                        (Updated on <FormattedDate date={updatedDate} />)
+                    </span>
+                </>
+            )}
         </div>
-        <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100"><a href={`/blog/${post.id}/`}>{title}</a></h2>
-        {
-            tags && tags.length > 0 && (
-                <div class="mt-2 flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                        <a
-                            href={`/blog/tag/${tag}`}
-                            class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-500 hover:bg-primary hover:text-white transition-colors dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary dark:hover:text-white"
-                        >
-                            {tag}
-                        </a>
-                    ))}
-                </div>
-            )
-        }
-    </header>
-    {
-        featureImage?.src && (
-            <figure class:list={['mt-6 mb-6', isLargeImage ? 'post-card-thumbnail-large' : 'post-card-thumbnail']}>
-                <a href={`/blog/${post.id}/`}>
-                    <CustomImage
-                        {...featureImage}
-                        class="w-full h-full object-cover object-center rounded-md"
-                        widths={isLargeImage ? [480, 640, 768, 960, 1200] : [160, 240, 320]}
-                        sizes={isLargeImage ? '(min-width: 1216px) 1152px, calc(100vw - 32px)' : '224px'}
-                    />
-                </a>
-            </figure>
-        )
-    }
-    {
-        excerpt && (
-            <div class="mt-4 post-card-content">
-                <div class="prose prose-slate sm:prose-lg max-w-none">{excerpt}</div>
+        <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100">
+            <a href={`/blog/${post.id}/`}>{title}</a>
+        </h2>
+        {tags && tags.length > 0 && (
+            <div class="mt-2 flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                    <a
+                        href={`/blog/tag/${tag}`}
+                        class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-500 hover:bg-primary hover:text-white transition-colors dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-primary dark:hover:text-white"
+                    >
+                        {tag}
+                    </a>
+                ))}
             </div>
-        )
-    }
+        )}
+    </header>
+    {featureImage?.src && (
+        <figure class:list={['mt-6 mb-6', isLargeImage ? 'post-card-thumbnail-large' : 'post-card-thumbnail']}>
+            <a href={`/blog/${post.id}/`}>
+                <CustomImage
+                    {...featureImage}
+                    class="w-full h-full object-cover object-center rounded-md"
+                    widths={isLargeImage ? [480, 640, 768, 960, 1200] : [160, 240, 320]}
+                    sizes={isLargeImage ? '(min-width: 1216px) 1152px, calc(100vw - 32px)' : '224px'}
+                />
+            </a>
+        </figure>
+    )}
+    {excerpt && (
+        <div class="mt-4 post-card-content">
+            <div class="prose prose-slate sm:prose-lg max-w-none">{excerpt}</div>
+        </div>
+    )}
 </article>
 
 <style>

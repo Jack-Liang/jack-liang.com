@@ -11,7 +11,7 @@ featureImage:
   alt: Blue stripes
 seo:
   image:
-    src: 'https://img.jack-liang.com/00-headImage/post-4.jpg' 
+    src: 'https://img.jack-liang.com/00-headImage/post-4.jpg'
 ---
 
 在当今即时满足成为常态的时代，网站性能至关重要。加载缓慢的网站会让用户感到沮丧，影响搜索引擎排名，并最终导致流量和收入损失。前端优化是确保网站快速、响应迅速且用户友好的关键。在本文中，我们将探讨一些优化网站性能的基本前端技术。

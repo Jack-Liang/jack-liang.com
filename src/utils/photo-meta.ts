@@ -99,7 +99,7 @@ function tagDesc(...candidates: unknown[]): string | undefined {
         if (typeof tag === 'string' && tag.trim()) return tag.trim();
         if (typeof tag === 'number') return String(tag);
         if (typeof tag === 'object' && typeof (tag as { description?: unknown }).description === 'string') {
-            const desc = ((tag as { description: string }).description).trim();
+            const desc = (tag as { description: string }).description.trim();
             if (desc) return desc;
         }
     }

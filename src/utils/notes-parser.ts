@@ -62,9 +62,7 @@ export function parseNotes(rawMarkdown: string, sourceTag?: string): ParsedNote[
     // 兼容不同换行风格（\r\n / \n）
     const normalized = rawMarkdown.replace(/\r\n/g, '\n');
     // 文件里出现 `## 日期` 标题时按标题格式切分，否则按独立一行的 --- 切分
-    const blocks = /^##\s+\d{4}\.\d{2}\.\d{2}/m.test(normalized)
-        ? splitByDateHeadings(normalized)
-        : normalized.split(/\n---\n/);
+    const blocks = /^##\s+\d{4}\.\d{2}\.\d{2}/m.test(normalized) ? splitByDateHeadings(normalized) : normalized.split(/\n---\n/);
 
     // 无日期条目继承文件内上一条的日期
     let lastDate: { y: number; m: number; d: number } | null = null;
@@ -94,9 +92,7 @@ export function parseNotes(rawMarkdown: string, sourceTag?: string): ParsedNote[
             const publishDate = new Date(Date.UTC(date.y, date.m, date.d));
 
             // 独立成行的 --- 一律视为分隔符残留（含文件末尾无换行的情况），不进正文
-            const contentLines = lines
-                .slice(contentStart)
-                .filter((l) => l.trim().length > 0 && l.trim() !== '---');
+            const contentLines = lines.slice(contentStart).filter((l) => l.trim().length > 0 && l.trim() !== '---');
             const rawContent = contentLines.join('\n').trim();
             if (!rawContent) continue;
 

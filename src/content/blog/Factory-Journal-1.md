@@ -9,7 +9,7 @@ featureImage:
   alt: Factory Journal 1
 seo:
   image:
-    src: 'https://img.jack-liang.com/Factory-Journal/1.jpg' 
+    src: 'https://img.jack-liang.com/Factory-Journal/1.jpg'
 ---
 
 上一个项目收工才一周，这边的活儿就接上了。骨头还没歇舒坦，脑子也昏沉沉的，今天又拖着这一身乏，到了深圳。

@@ -9,7 +9,7 @@ featureImage:
   alt: Factory Journal 2
 seo:
   image:
-    src: 'https://img.jack-liang.com/Factory-Journal/2.jpg' 
+    src: 'https://img.jack-liang.com/Factory-Journal/2.jpg'
 ---
 
 天还蒙蒙亮，窗户透着点青白，闹钟没响，我先醒了。夜里睡得沉，浑身骨头都松快。也不用急着起身 —— 办公室就在路对面大楼里，住园区这点好，省了赶早班的慌，日子能过得匀净些。

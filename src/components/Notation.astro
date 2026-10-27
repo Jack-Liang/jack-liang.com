@@ -41,15 +41,12 @@ const dataOptions = {
 };
 ---
 
-<span 
-    class:list={['notation-target inline-block', className]}
-    data-notation-options={JSON.stringify(dataOptions)}
->
+<span class:list={['notation-target inline-block', className]} data-notation-options={JSON.stringify(dataOptions)}>
     <slot />
 </span>
 
 <script is:inline>
-    (function() {
+    (function () {
         let isLoading = false;
         let callbacks = [];
         // element -> annotation instance，保留引用以便布局位移后重绘定位
@@ -70,12 +67,14 @@ const dataOptions = {
 
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/rough-notation@0.5.1/lib/rough-notation.iife.js';
-            script.onload = function() {
+            script.onload = function () {
                 isLoading = false;
-                callbacks.forEach(function(cb) { cb(); });
+                callbacks.forEach(function (cb) {
+                    cb();
+                });
                 callbacks = [];
             };
-            script.onerror = function() {
+            script.onerror = function () {
                 isLoading = false;
                 callbacks = [];
                 console.error('Failed to load Rough Notation');
@@ -96,10 +95,8 @@ const dataOptions = {
         }
 
         function initNotations() {
-            const elements = document.querySelectorAll(
-                '.notation-target[data-notation-options]:not([data-notation-initialized])'
-            );
-            elements.forEach(function(el) {
+            const elements = document.querySelectorAll('.notation-target[data-notation-options]:not([data-notation-initialized])');
+            elements.forEach(function (el) {
                 const opts = JSON.parse(el.dataset.notationOptions);
                 showAnnotation(el, opts);
                 el.dataset.notationInitialized = 'true';
@@ -110,11 +107,9 @@ const dataOptions = {
         // rough-notation 只在元素「尺寸」变化时重绘，不会响应「位置」变化。
         function refreshNotations() {
             if (refreshTimer) clearTimeout(refreshTimer);
-            refreshTimer = setTimeout(function() {
+            refreshTimer = setTimeout(function () {
                 refreshTimer = null;
-                document.querySelectorAll(
-                    '.notation-target[data-notation-options][data-notation-initialized]'
-                ).forEach(function(el) {
+                document.querySelectorAll('.notation-target[data-notation-options][data-notation-initialized]').forEach(function (el) {
                     const annotation = annotations.get(el);
                     if (annotation) annotation.show();
                 });
@@ -124,12 +119,12 @@ const dataOptions = {
         // 等布局稳定（字体 + 图片加载完）再首次绘制，避免画在之后会被推移的位置上
         function whenStable() {
             const fontsReady = (document.fonts && document.fonts.ready) || Promise.resolve();
-            const imagesReady = new Promise(function(resolve) {
+            const imagesReady = new Promise(function (resolve) {
                 if (document.readyState === 'complete') resolve();
                 else window.addEventListener('load', resolve, { once: true });
             });
             // 兜底：不让某个卡住的资源永远阻塞首次绘制
-            const fallback = new Promise(function(resolve) {
+            const fallback = new Promise(function (resolve) {
                 setTimeout(resolve, 1500);
             });
             return Promise.race([Promise.all([fontsReady, imagesReady]), fallback]);
@@ -137,15 +132,19 @@ const dataOptions = {
 
         function boot() {
             annotations.clear(); // view transition 切换页面后，元素是全新的
-            loadRoughNotation(function() {
+            loadRoughNotation(function () {
                 whenStable().then(initNotations);
             });
         }
 
         // 监听懒加载图片的 load（load 不冒泡，需用 capture），首次绘制后再补正位移
-        document.addEventListener('load', function(e) {
-            if (e.target && e.target.tagName === 'IMG') refreshNotations();
-        }, true);
+        document.addEventListener(
+            'load',
+            function (e) {
+                if (e.target && e.target.tagName === 'IMG') refreshNotations();
+            },
+            true
+        );
 
         document.addEventListener('astro:after-swap', boot);
 

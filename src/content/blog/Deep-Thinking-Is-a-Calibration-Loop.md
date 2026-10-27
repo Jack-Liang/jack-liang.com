@@ -12,7 +12,6 @@ featureImage:
 seo:
   image:
     src: 'https://img.jack-liang.com/00-headImage/Deep%20Thinking%20Is%20a%20Calibration%20Loop.png'
-
 ---
 
 最近发现一件有意思的事：很多人都记住了 **「量化、回顾、联想」** 这三个词，但做的时候都是各做各的——量化就是打完分就扔到一边，回顾变成了照着抄一遍，联想干脆就是坐着发呆。

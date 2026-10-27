@@ -75,7 +75,7 @@ CALL FUNCTION 'GUI_UPLOAD'
 
 修改代码后执行，结果就正常了。
 
-![成功解码](https://img.jack-liang.com/garbled-text/p5.jpg) 
+![成功解码](https://img.jack-liang.com/garbled-text/p5.jpg)
 
 ---
 

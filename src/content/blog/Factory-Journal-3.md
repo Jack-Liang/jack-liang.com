@@ -9,7 +9,7 @@ featureImage:
   alt: Factory Journal 3
 seo:
   image:
-    src: 'https://img.jack-liang.com/Factory-Journal/3.jpg' 
+    src: 'https://img.jack-liang.com/Factory-Journal/3.jpg'
 ---
 
 午饭时去食堂，人已经满了。灯不亮，空气里混着汗味和饭菜的热气，潮乎乎的。

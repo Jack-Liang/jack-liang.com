@@ -20,7 +20,11 @@ draft: false
 
 ## 什么是 Rough Notation？
 
-<Notation type="highlight" color="#fef08a" animationDelay={200}>Rough Notation</Notation> 是一个轻量级的 JavaScript 库，它可以在网页上创建手绘风格的文本注释。与传统的精确几何图形不同，Rough Notation 使用不规则的线条和形状，模拟真实手绘的效果，让你的网页内容更加生动有趣。
+<Notation type="highlight" color="#fef08a" animationDelay={200}>
+  Rough Notation
+</Notation>
+是一个轻量级的 JavaScript 库，它可以在网页上创建手绘风格的文本注释。与传统的精确几何图形不同，Rough Notation
+使用不规则的线条和形状，模拟真实手绘的效果，让你的网页内容更加生动有趣。
 
 ## 支持的注释类型
 
@@ -79,7 +83,9 @@ Rough Notation 提供了多种注释样式，可以满足不同场景的需求�
 import Notation from '../components/Notation.astro';
 ---
 
-<Notation type="highlight" color="#fef08a">这段文本会被高亮显示</Notation>
+<Notation type="highlight" color="#fef08a">
+  这段文本会被高亮显示
+</Notation>
 ```
 
 ### 自定义参数
@@ -87,41 +93,36 @@ import Notation from '../components/Notation.astro';
 组件支持丰富的自定义参数：
 
 ```astro
-<Notation
-    type="box"
-    color="#ef4444"
-    animate={true}
-    animationDuration={1000}
-    animationDelay={500}
-    padding={10}
-    strokeWidth={3}
->
-    带自定义参数的方框注释
+<Notation type="box" color="#ef4444" animate={true} animationDuration={1000} animationDelay={500} padding={10} strokeWidth={3}>
+  带自定义参数的方框注释
 </Notation>
 ```
 
 ### 参数说明
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| type | string | 必填 | 注释类型 |
-| color | string | #000000 | 注释颜色 |
-| animate | boolean | true | 是否启用动画 |
-| animationDuration | number | 800 | 动画持续时间（毫秒） |
-| animationDelay | number | 0 | 动画延迟时间（毫秒） |
-| animationIteration | number | 1 | 动画重复次数 |
-| padding | number/array | 5 | 内边距 |
-| strokeWidth | number | 2 | 线条宽度 |
-| multiline | boolean | false | 是否支持多行文本 |
-| iterations | number | 2 | 绘制迭代次数 |
-| show | boolean | true | 是否自动显示 |
-| brackets | string[] | ['right'] | bracket 类型专用，指定括号位置，可选值：left, right, top, bottom |
+| 参数               | 类型         | 默认值    | 说明                                                             |
+| ------------------ | ------------ | --------- | ---------------------------------------------------------------- |
+| type               | string       | 必填      | 注释类型                                                         |
+| color              | string       | #000000   | 注释颜色                                                         |
+| animate            | boolean      | true      | 是否启用动画                                                     |
+| animationDuration  | number       | 800       | 动画持续时间（毫秒）                                             |
+| animationDelay     | number       | 0         | 动画延迟时间（毫秒）                                             |
+| animationIteration | number       | 1         | 动画重复次数                                                     |
+| padding            | number/array | 5         | 内边距                                                           |
+| strokeWidth        | number       | 2         | 线条宽度                                                         |
+| multiline          | boolean      | false     | 是否支持多行文本                                                 |
+| iterations         | number       | 2         | 绘制迭代次数                                                     |
+| show               | boolean      | true      | 是否自动显示                                                     |
+| brackets           | string[]     | ['right'] | bracket 类型专用，指定括号位置，可选值：left, right, top, bottom |
 
 ## 实际应用示例
 
 ### 示例一：高亮关键词
 
-<Notation type="highlight" color="#fef08a" animationDelay={1800}>在文章中高亮重要的关键词</Notation>，让读者更容易抓住重点。
+<Notation type="highlight" color="#fef08a" animationDelay={1800}>
+  在文章中高亮重要的关键词
+</Notation>
+，让读者更容易抓住重点。
 
 ### 示例二：注释说明
 
@@ -137,7 +138,10 @@ import Notation from '../components/Notation.astro';
 
 ## 总结
 
-<Notation type="box" color="#06b6d4" animationDelay={2400}>Rough Notation</Notation> 是一个非常有趣的前端库，它为网页内容增添了独特的手绘风格。无论是在博客文章、演示文稿还是产品介绍中，使用手绘注释都能让内容更加生动、更具吸引力。
+<Notation type="box" color="#06b6d4" animationDelay={2400}>
+  Rough Notation
+</Notation>
+是一个非常有趣的前端库，它为网页内容增添了独特的手绘风格。无论是在博客文章、演示文稿还是产品介绍中，使用手绘注释都能让内容更加生动、更具吸引力。
 
 在 Astro 项目中，通过封装的 `Notation` 组件，可以轻松地在任何页面中使用这些手绘注释效果，无需复杂的配置和代码编写。
 

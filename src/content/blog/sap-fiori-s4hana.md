@@ -25,7 +25,6 @@ seo:
 - **适用场景与局限性**：S/4HANA更适合全球运营的大型复杂组织，原使用R3、ECC、Business One的legacy用户是迁移的核心候选对象，SAP设定的迁移截止时间为2030年，但并非所有企业都适合选择S/4HANA，企业可根据自身需求选择Oracle、Microsoft Dynamics等其他ERP方案。
 - **项目实施要点**：S/4HANA实施是大型复杂项目，技术只是其中一部分，真正的挑战来自组织内部的变革管理，需要清晰的项目方向和强有力的变革管理才能保证成功。
 
-
 ## SAP Fiori用户体验价值验证
 
 ![SAP Fiori用户体验价值验证](https://img.jack-liang.com/sap-fiori-s4hana/SAP-fiori.png)
@@ -58,7 +57,6 @@ seo:
 ## SAP Fiori前端服务器部署方案
 
 ![SAP Fiori技术基础](https://img.jack-liang.com/sap-fiori-s4hana/technology-foundation.png)
-
 
 - **嵌入式部署推荐**：对于使用SAP S/4HANA的场景，官方推荐嵌入式部署，即前端服务器和S/4HANA后端服务器部署在同一系统中。
 - **嵌入式部署优势**：该方案不需要额外的SAP NetWeaver中心系统，不需要远程调用，运行开销更低，可直接访问元数据和业务数据，在同一个系统内完成授权管理，流程更简化。

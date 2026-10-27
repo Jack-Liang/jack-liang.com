@@ -19,8 +19,10 @@ seo:
 
 我让 AI 直接去 SAP 里查了一下有哪些用户。
 
-<Notation type="highlight" color="#fef08a">没有写一行代码，没有装任何 SAP
-客户端，甚至我都没告诉它该调哪个函数</Notation>。它自己搜、自己查文档、自己调用，然后把结果整理成了自然语言。
+<Notation type="highlight" color="#fef08a">
+  没有写一行代码，没有装任何 SAP 客户端，甚至我都没告诉它该调哪个函数
+</Notation>
+。它自己搜、自己查文档、自己调用，然后把结果整理成了自然语言。
 
 这是怎么做到的？
 
@@ -50,7 +52,10 @@ API。任何语言、任何工具、任何 AI Agent，只要会发 POST 请求�
 
 # 一个 curl 就能调任意 BAPI
 
-<Notation type="underline" color="#ef4444" animationDelay={200}>对于普通开发者来说</Notation>，调用方式也非常简单：
+<Notation type="underline" color="#ef4444" animationDelay={200}>
+  对于普通开发者来说
+</Notation>
+，调用方式也非常简单：
 
 ```bash
 curl -X POST http://localhost:3000/api/rfc \

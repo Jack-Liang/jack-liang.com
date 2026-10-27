@@ -10,7 +10,7 @@ featureImage:
   src: 'https://img.jack-liang.com/the-power-of-now/Image_00004_.jpg'
   alt: '头图'
 seo:
-  image: 
+  image:
     src: 'https://img.jack-liang.com/the-power-of-now/Image_00004_.jpg'
 ---
 

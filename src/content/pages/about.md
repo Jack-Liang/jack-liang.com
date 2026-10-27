@@ -7,7 +7,7 @@ seo:
   title: 关于我 - 个人简介
   description: 关于我个人背景、技能和经历的详细介绍页面
   image:
-    src: 'https://img.jack-liang.com/00-headImage/about.jpeg' 
+    src: 'https://img.jack-liang.com/00-headImage/about.jpeg'
 ---
 
 Hi，我是 Jack Liang，一位 ABAP 开发人员。
@@ -65,5 +65,3 @@ SAP 是服务企业发展的管理软件。这些年用下来，我慢慢理解�
 日常有听音频、记笔记、写内容的习惯，这里是我的个人博客，我将持续更新内容。
 
 > 写代码和写诗一样，都是在创造秩序——但代码创造的秩序，真的能改变世界。
-
-

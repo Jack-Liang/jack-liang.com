@@ -9,7 +9,22 @@ export type Link = {
 };
 
 export type SocialLink = Link & {
-    icon: 'bluesky' | 'codepen' | 'dev' | 'facebook' | 'github' | 'instagram' | 'linkedin' | 'mastodon' | 'medium' | 'reddit' | 'x' | 'youtube' | 'bilibili' | 'zhihu' | 'xiaohongshu';
+    icon:
+        | 'bluesky'
+        | 'codepen'
+        | 'dev'
+        | 'facebook'
+        | 'github'
+        | 'instagram'
+        | 'linkedin'
+        | 'mastodon'
+        | 'medium'
+        | 'reddit'
+        | 'x'
+        | 'youtube'
+        | 'bilibili'
+        | 'zhihu'
+        | 'xiaohongshu';
 };
 
 export type Hero = {

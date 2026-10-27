@@ -23,9 +23,7 @@ function toUtcDate(date) {
 }
 
 export async function GET(context) {
-    const posts = (await getCollection('blog'))
-        .filter(({ data }) => !data.draft)
-        .sort(sortPostsByDateDesc);
+    const posts = (await getCollection('blog')).filter(({ data }) => !data.draft).sort(sortPostsByDateDesc);
 
     const photos = (await getCollection('photography'))
         .filter(({ data }) => !data.draft)
@@ -68,9 +66,7 @@ export async function GET(context) {
         content: `<p>${escapeHtml(note.excerpt)}</p>`
     }));
 
-    const items = [...blogItems, ...photoItems, ...noteItems].sort(
-        (a, b) => b.pubDate.getTime() - a.pubDate.getTime()
-    );
+    const items = [...blogItems, ...photoItems, ...noteItems].sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime());
 
     return rss({
         title: siteConfig.title,

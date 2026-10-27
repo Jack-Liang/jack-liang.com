@@ -11,9 +11,10 @@ featureImage:
   alt: Circles
 seo:
   image:
-    src: 'https://img.jack-liang.com/00-headImage/post-6.jpg' 
+    src: 'https://img.jack-liang.com/00-headImage/post-6.jpg'
 draft: true
 ---
+
 你是否对开启一份有回报的前端开发职业生涯感兴趣，或者希望在这个充满活力的领域中提升现有技能？前端开发是科技行业中一个令人兴奋且不断发展的领域，要想取得成功，拥有一份清晰的路线图至关重要。在本文中，我们将为你提供"终极前端开发者职业路线图"，指引你从初学者成长为专家的旅程。
 
 ## 第一阶段：入门起步

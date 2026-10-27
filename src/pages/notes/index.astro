@@ -67,45 +67,37 @@ function paperColor(id: string): number {
                 <p class="mt-4 text-slate-500 dark:text-slate-400">生活不是我们活过的日子，而是我们记住的日子。</p>
             </div>
 
-            {
-                allNotes.length === 0 ? (
-                    <p class="rounded-2xl border border-dashed border-slate-300 py-16 text-center text-slate-400 dark:border-slate-700 dark:text-slate-500">
-                        还没有随想，先去写一张纸条吧。
-                    </p>
-                ) : (
-                    <div class="notes-desk-outer">
-                        <div
-                            id="notes-desk"
-                            class="notes-desk"
-                            style={`--rows-sm: ${rowsFor(allNotes.length, COLS_MOBILE)}; --rows: ${rowsFor(allNotes.length, COLS_DESKTOP)};`}
-                        >
-                            {allNotes.map((note, index) => {
-                                const d = spotsDesktop[index];
-                                const m = spotsMobile[index];
-                                return (
-                                    <button
-                                        type="button"
-                                        class={`note-paper pc-${paperColor(note.id)} size-${paperSize(note.content)}`}
-                                        style={`--x: ${d.x}%; --y: ${d.y}%; --r: ${d.r}deg; --z: ${d.z}; --tx: ${d.tapeX}px; --x-sm: ${m.x}%; --y-sm: ${m.y}%;`}
-                                        aria-haspopup="dialog"
-                                    >
-                                        <span class="note-date">{formatStamp(note.date)}</span>
-                                        <span class="note-text">{note.content}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+            {allNotes.length === 0 ? (
+                <p class="rounded-2xl border border-dashed border-slate-300 py-16 text-center text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                    还没有随想，先去写一张纸条吧。
+                </p>
+            ) : (
+                <div class="notes-desk-outer">
+                    <div
+                        id="notes-desk"
+                        class="notes-desk"
+                        style={`--rows-sm: ${rowsFor(allNotes.length, COLS_MOBILE)}; --rows: ${rowsFor(allNotes.length, COLS_DESKTOP)};`}
+                    >
+                        {allNotes.map((note, index) => {
+                            const d = spotsDesktop[index];
+                            const m = spotsMobile[index];
+                            return (
+                                <button
+                                    type="button"
+                                    class={`note-paper pc-${paperColor(note.id)} size-${paperSize(note.content)}`}
+                                    style={`--x: ${d.x}%; --y: ${d.y}%; --r: ${d.r}deg; --z: ${d.z}; --tx: ${d.tapeX}px; --x-sm: ${m.x}%; --y-sm: ${m.y}%;`}
+                                    aria-haspopup="dialog"
+                                >
+                                    <span class="note-date">{formatStamp(note.date)}</span>
+                                    <span class="note-text">{note.content}</span>
+                                </button>
+                            );
+                        })}
                     </div>
-                )
-            }
+                </div>
+            )}
 
-            {
-                allNotes.length > 0 && (
-                    <p class="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
-                        点击一张纸条捡起来看看
-                    </p>
-                )
-            }
+            {allNotes.length > 0 && <p class="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">点击一张纸条捡起来看看</p>}
         </div>
     </main>
 
@@ -163,12 +155,36 @@ function paperColor(id: string): number {
     }
 
     /* ===== 纸色板（低饱和纸感，frontmatter 的 PALETTE_COUNT 与此对应） ===== */
-    .pc-0 { --paper-bg: #fdfaf0; --paper-ink: #4a4339; --paper-edge: rgba(120, 100, 60, 0.14); }
-    .pc-1 { --paper-bg: #fdf4c9; --paper-ink: #5d532a; --paper-edge: rgba(140, 120, 40, 0.18); }
-    .pc-2 { --paper-bg: #e9f2f8; --paper-ink: #33506b; --paper-edge: rgba(60, 100, 140, 0.16); }
-    .pc-3 { --paper-bg: #ebf3e6; --paper-ink: #47603f; --paper-edge: rgba(80, 120, 70, 0.16); }
-    .pc-4 { --paper-bg: #fcebe7; --paper-ink: #6d4a42; --paper-edge: rgba(150, 90, 80, 0.14); }
-    .pc-5 { --paper-bg: #f1edf8; --paper-ink: #4f4668; --paper-edge: rgba(100, 90, 140, 0.16); }
+    .pc-0 {
+        --paper-bg: #fdfaf0;
+        --paper-ink: #4a4339;
+        --paper-edge: rgba(120, 100, 60, 0.14);
+    }
+    .pc-1 {
+        --paper-bg: #fdf4c9;
+        --paper-ink: #5d532a;
+        --paper-edge: rgba(140, 120, 40, 0.18);
+    }
+    .pc-2 {
+        --paper-bg: #e9f2f8;
+        --paper-ink: #33506b;
+        --paper-edge: rgba(60, 100, 140, 0.16);
+    }
+    .pc-3 {
+        --paper-bg: #ebf3e6;
+        --paper-ink: #47603f;
+        --paper-edge: rgba(80, 120, 70, 0.16);
+    }
+    .pc-4 {
+        --paper-bg: #fcebe7;
+        --paper-ink: #6d4a42;
+        --paper-edge: rgba(150, 90, 80, 0.14);
+    }
+    .pc-5 {
+        --paper-bg: #f1edf8;
+        --paper-ink: #4f4668;
+        --paper-edge: rgba(100, 90, 140, 0.16);
+    }
 
     /* ===== 纸条 ===== */
     .note-paper {
@@ -207,9 +223,15 @@ function paperColor(id: string): number {
         }
     }
 
-    .size-s { --w: 168px; }
-    .size-m { --w: 196px; }
-    .size-l { --w: 226px; }
+    .size-s {
+        --w: 168px;
+    }
+    .size-m {
+        --w: 196px;
+    }
+    .size-l {
+        --w: 226px;
+    }
 
     /* 顶部一截半透明胶带（水平位置随纸条随机偏移，更像随手贴的） */
     .note-paper::before {
@@ -341,7 +363,9 @@ function paperColor(id: string): number {
         height: 2rem;
         border-radius: 9999px;
         color: color-mix(in srgb, var(--paper-ink) 55%, transparent);
-        transition: background-color 0.2s ease, color 0.2s ease;
+        transition:
+            background-color 0.2s ease,
+            color 0.2s ease;
     }
 
     .note-close:hover,
@@ -368,12 +392,24 @@ function paperColor(id: string): number {
     }
 
     /* ===== 暗色：夜里桌面上的纸条，纸色不变、桌面加深；每色微压暗 ===== */
-    .dark .pc-0 { --paper-bg: #f7f0dd; }
-    .dark .pc-1 { --paper-bg: #f3e9b8; }
-    .dark .pc-2 { --paper-bg: #e0ecf3; }
-    .dark .pc-3 { --paper-bg: #e1ecda; }
-    .dark .pc-4 { --paper-bg: #f5e1db; }
-    .dark .pc-5 { --paper-bg: #e9e3f2; }
+    .dark .pc-0 {
+        --paper-bg: #f7f0dd;
+    }
+    .dark .pc-1 {
+        --paper-bg: #f3e9b8;
+    }
+    .dark .pc-2 {
+        --paper-bg: #e0ecf3;
+    }
+    .dark .pc-3 {
+        --paper-bg: #e1ecda;
+    }
+    .dark .pc-4 {
+        --paper-bg: #f5e1db;
+    }
+    .dark .pc-5 {
+        --paper-bg: #e9e3f2;
+    }
 
     .dark .notes-desk-outer {
         border-color: rgba(51, 65, 85, 0.8);

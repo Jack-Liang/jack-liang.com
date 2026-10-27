@@ -33,7 +33,7 @@ const siteConfig: SiteConfig = {
     ],
     hero: {
         title: '你好！',
-        text: "我是 Jack Liang，一个 ABAP 开发者。很高兴能认识你。",
+        text: '我是 Jack Liang，一个 ABAP 开发者。很高兴能认识你。',
         avatar: {
             src: 'https://img.jack-liang.com/00-headImage/avatar.jpg',
             alt: 'Jack-Liang'
@@ -60,7 +60,8 @@ const siteConfig: SiteConfig = {
         cardText: '复制 3 行消息发给你常用的 AI 助手，它就会自动帮你留意这个网站，有新文章、随想或新照片时在下一次对话里告诉你。',
         cardCta: '查看配置',
         pageTitle: '让 AI 自动帮你关注网站更新',
-        pageIntro: '不用注册邮箱、不用开推送。只要复制一段 3 行的消息发给 Claude 或 ChatGPT，它就会自动帮你留意本站，下次再聊天时如果有新文章、新随想或新照片，会先主动告诉你。',
+        pageIntro:
+            '不用注册邮箱、不用开推送。只要复制一段 3 行的消息发给 Claude 或 ChatGPT，它就会自动帮你留意本站，下次再聊天时如果有新文章、新随想或新照片，会先主动告诉你。',
         systemPrompt: `我想让你帮我关注 Jack-Liang 个人网站的更新。
 
 按下面 3 步做：

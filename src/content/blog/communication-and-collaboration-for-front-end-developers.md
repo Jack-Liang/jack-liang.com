@@ -11,7 +11,7 @@ featureImage:
   alt: Sun and sea waves
 seo:
   image:
-    src: 'https://img.jack-liang.com/00-headImage/post-2.jpg' 
+    src: 'https://img.jack-liang.com/00-headImage/post-2.jpg'
 ---
 
 前端开发不仅仅是编写代码，更是与他人无缝合作，创造卓越用户体验的过程。在当今动态且相互依存的科技行业中，有效的沟通与协作是前端开发者取得成功的必备技能。在本文中，我们将探讨这些技能的重要性，并为希望在这些领域脱颖而出的前端开发者提供实用建议。

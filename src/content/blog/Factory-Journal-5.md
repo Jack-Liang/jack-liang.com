@@ -6,10 +6,10 @@ tags:
   - 驻厂日记
 featureImage:
   src: 'https://img.jack-liang.com/Factory-Journal/5.jpg'
-  alt: Factory Journal 5    
+  alt: Factory Journal 5
 seo:
   image:
-    src: 'https://img.jack-liang.com/Factory-Journal/5.jpg' 
+    src: 'https://img.jack-liang.com/Factory-Journal/5.jpg'
 ---
 
 早晨是被雨砸醒的。起初是零星的点子，“啪、啪” 打在窗玻璃上，像谁用指尖轻轻叩门。没等睁眼，雨势忽然翻了倍，哗啦啦一阵急响，倒像是有人往楼下泼豆子，密得不留一点空当。

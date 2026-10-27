@@ -11,7 +11,7 @@ featureImage:
   alt: Laptop computer
 seo:
   image:
-    src: 'https://img.jack-liang.com/00-headImage/post-1.jpg' 
+    src: 'https://img.jack-liang.com/00-headImage/post-1.jpg'
 ---
 
 前端开发是一个不断发展的动态领域，持续演进以满足现代 Web 开发的需求。近年来，我们见证了各种工具和框架的兴起，它们彻底改变了我们构建 Web 应用程序的方式。Astro.js 就是这样一个令人兴奋的新成员，它为前端开发领域带来了新的活力。在本文中，我们将探讨 Astro.js 是什么，以及它如何有望塑造前端开发的未来。
