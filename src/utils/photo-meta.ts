@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import exifReader from 'exif-reader';
 import sharp from 'sharp';
+import type { Metadata } from 'sharp';
 
 type RGB = { r: number; g: number; b: number };
 
@@ -130,7 +131,7 @@ function tagNumber(...candidates: unknown[]): number | undefined {
     return undefined;
 }
 
-function parseExif(metadata: sharp.Metadata): PhotoExif | null {
+function parseExif(metadata: Metadata): PhotoExif | null {
     if (!metadata.exif) return null;
     try {
         const ex = exifReader(metadata.exif) as Record<string, any>;

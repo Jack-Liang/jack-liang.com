@@ -8,7 +8,7 @@ import sharp from 'sharp';
 const siteName = 'Jack-Liang';
 
 const FONT_CACHE_DIR = path.join(process.cwd(), '.cache', 'fonts');
-const FONT_FILES = [
+const FONT_FILES: { file: string; weight: 400 | 700; urls: string[] }[] = [
     {
         file: 'NotoSansSC-Regular.otf',
         weight: 400,
@@ -50,7 +50,7 @@ async function loadFont(file: string, urls: string[]): Promise<Buffer> {
     throw new Error(`字体下载失败: ${file}`);
 }
 
-let fontsPromise: Promise<{ data: Buffer; weight: number }[]> | null = null;
+let fontsPromise: Promise<{ data: Buffer; weight: 400 | 700 }[]> | null = null;
 function loadFonts() {
     if (!fontsPromise) {
         fontsPromise = Promise.all(FONT_FILES.map(async ({ file, weight, urls }) => ({ data: await loadFont(file, urls), weight })));

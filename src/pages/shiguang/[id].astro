@@ -158,7 +158,7 @@ const exifLine = exif ? [exif.model, exif.focalLength, exif.fNumber, exif.exposu
         if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
         const target = e.target as HTMLElement | null;
         if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
-        const link = document.querySelector(e.key === 'ArrowLeft' ? 'a[aria-label="上一篇"]' : 'a[aria-label="下一篇"]');
+        const link = document.querySelector<HTMLElement>(e.key === 'ArrowLeft' ? 'a[aria-label="上一篇"]' : 'a[aria-label="下一篇"]');
         link?.click();
     });
 

@@ -1,5 +1,5 @@
 import { getCollection } from 'astro:content';
-import { parseNotes } from '../../utils/notes-parser';
+import { parseNotes, type ParsedNote } from '../../utils/notes-parser';
 import { sortPostsByDateDesc } from '../../utils/post-utils';
 
 const SCHEMA_VERSION = 2;
@@ -20,7 +20,7 @@ export async function GET({ site }: { site: URL | undefined }) {
 
     // --- notes ---
     const notesEntries = await getCollection('notes');
-    const allNotes = [] as ReturnType<typeof parseNotes>[];
+    const allNotes: ParsedNote[] = [];
     for (const entry of notesEntries) {
         // Astro collection entry.body 携带除 frontmatter 以外的原始 markdown 文本
         // （frontmatter 为 `---year: x---`；若 notes 文没写 frontmatter，则 body 就是全文）

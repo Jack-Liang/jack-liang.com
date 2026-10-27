@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import { parseNotes } from '../utils/notes-parser';
+import { parseNotes, type ParsedNote } from '../utils/notes-parser';
 import { sortPostsByDateDesc } from '../utils/post-utils';
 import { countWords, formatWordCount } from '../utils/word-count';
 
@@ -16,7 +16,7 @@ interface StatItem {
 
 // --- 随想 ---
 const notesEntries = await getCollection('notes');
-const allNotes = [] as ReturnType<typeof parseNotes>[];
+const allNotes: ParsedNote[] = [];
 for (const entry of notesEntries) {
     const raw = typeof entry.body === 'string' ? entry.body : '';
     allNotes.push(...parseNotes(raw, entry.id));
