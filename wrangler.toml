@@ -1,5 +1,15 @@
 name = 'jack-liang'
+# 适配器 v13+ 的约定：指向包自带入口（开发/生产通用），而非构建产物路径
+main = '@astrojs/cloudflare/entrypoints/server'
 compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jack-liang-views"
+database_id = "d6e7efbd-2a67-48eb-8533-93ab21a34ad2"
+migrations_dir = "migrations"

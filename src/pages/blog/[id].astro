@@ -102,6 +102,11 @@ const jsonLd = {
                     <FormattedDate date={publishDate} />
                     {' · '}
                     <span>约 {readingMinutes} 分钟</span>
+                    {' · '}
+                    {/* 浏览量由 /api/views 异步填充；取不到就不展示，避免占位闪动 */}
+                    <span id="view-count" data-slug={post.id} data-pagefind-ignore hidden>
+                        次浏览
+                    </span>
                     {updatedDate && (
                         <>
                             {' '}
@@ -432,5 +437,24 @@ const jsonLd = {
             bindCodeCollapse();
             updateProgressBar();
         });
+    </script>
+    <script>
+        // 浏览量：进文章页上报一次，POST 返回去重后的最新计数
+        (async () => {
+            const viewEl = document.getElementById('view-count');
+            const slug = viewEl?.getAttribute('data-slug');
+            if (!viewEl || !slug) return;
+            try {
+                const res = await fetch(`/api/views/${encodeURIComponent(slug)}`, { method: 'POST' });
+                if (!res.ok) return;
+                const { views } = (await res.json()) as { views?: number };
+                if (typeof views === 'number' && views > 0) {
+                    viewEl.textContent = `${views.toLocaleString()} 次浏览`;
+                    viewEl.hidden = false;
+                }
+            } catch {
+                // 统计不可用时不影响阅读
+            }
+        })();
     </script>
 </BaseLayout>

@@ -1,12 +1,11 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { unified } from '@astrojs/markdown-remark';
+import cloudflare from '@astrojs/cloudflare';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import pagefind from 'astro-pagefind';
 import { defineConfig } from 'astro/config';
-import remarkGlobalComponents from './src/remark/global-components.mjs';
 
 // 草稿的 slug 集合：glob loader 的 id 就是文件名，构建前从 frontmatter 扫出来供 sitemap 过滤
 const blogDir = fileURLToPath(new URL('./src/content/blog/', import.meta.url));
@@ -23,6 +22,15 @@ const draftSlugs = new Set(
 export default defineConfig({
     site: 'https://jack-liang.com',
     output: 'static',
+    // 默认仍全量静态预渲染；仅 /api/views 等标了 prerender = false 的路由走 Worker 按需渲染
+    adapter: cloudflare({
+        // 预渲染跑在 Node 里：OG/摄影页的 sharp 等 Node 原生依赖只在构建期需要
+        prerenderEnvironment: 'node',
+        platformProxy: {
+            // astro dev 时从 wrangler.toml 读取 D1 绑定，本地直接可用
+            enabled: true
+        }
+    }),
     // 站内链接 hover 预取，翻页/进文章接近秒开
     prefetch: {
         prefetchAll: true,
@@ -30,11 +38,6 @@ export default defineConfig({
     },
     devToolbar: {
         enabled: false
-    },
-    markdown: {
-        processor: unified({
-            remarkPlugins: [remarkGlobalComponents]
-        })
     },
     vite: {
         plugins: [tailwindcss()],

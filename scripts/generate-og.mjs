@@ -1,14 +1,19 @@
-import fs from 'node:fs';
+// 构建后运行（astro build && node scripts/generate-og.mjs）：
+// 为每篇已发布文章生成「标题 + 署名」的社交分享卡到 dist/og/<slug>.png。
+// satori/resvg/sharp 都是 Node 原生或纯构建期依赖，放在 Astro 路由里会被
+// Cloudflare Worker 打包器扫描导致构建失败，因此与 Astro 服务端图彻底解耦。
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 
-// 站点署名（避免循环依赖 site-config，直接内置）
 const siteName = 'Jack-Liang';
+const blogDir = path.resolve('src/content/blog');
+const outDir = path.resolve('dist/client/og');
 
 const FONT_CACHE_DIR = path.join(process.cwd(), '.cache', 'fonts');
-const FONT_FILES: { file: string; weight: 400 | 700; urls: string[] }[] = [
+const FONT_FILES = [
     {
         file: 'NotoSansSC-Regular.otf',
         weight: 400,
@@ -27,10 +32,10 @@ const FONT_FILES: { file: string; weight: 400 | 700; urls: string[] }[] = [
     }
 ];
 
-async function loadFont(file: string, urls: string[]): Promise<Buffer> {
+async function loadFont(file, urls) {
     const cachePath = path.join(FONT_CACHE_DIR, file);
     try {
-        return fs.readFileSync(cachePath);
+        return readFileSync(cachePath);
     } catch {
         // 未缓存，继续下载
     }
@@ -40,8 +45,8 @@ async function loadFont(file: string, urls: string[]): Promise<Buffer> {
             if (!res.ok) continue;
             const buf = Buffer.from(await res.arrayBuffer());
             if (buf.length < 100_000) continue;
-            fs.mkdirSync(FONT_CACHE_DIR, { recursive: true });
-            fs.writeFileSync(cachePath, buf);
+            mkdirSync(FONT_CACHE_DIR, { recursive: true });
+            writeFileSync(cachePath, buf);
             return buf;
         } catch {
             // 尝试下一个源
@@ -50,7 +55,7 @@ async function loadFont(file: string, urls: string[]): Promise<Buffer> {
     throw new Error(`字体下载失败: ${file}`);
 }
 
-let fontsPromise: Promise<{ data: Buffer; weight: 400 | 700 }[]> | null = null;
+let fontsPromise = null;
 function loadFonts() {
     if (!fontsPromise) {
         fontsPromise = Promise.all(FONT_FILES.map(async ({ file, weight, urls }) => ({ data: await loadFont(file, urls), weight })));
@@ -59,7 +64,7 @@ function loadFonts() {
 }
 
 /** 纯色兜底卡：字体不可用等极端情况下也能给出 og:image */
-async function fallbackPng(): Promise<Buffer> {
+async function fallbackPng() {
     return sharp({
         create: { width: 1200, height: 630, channels: 4, background: { r: 238, g: 240, b: 244, alpha: 1 } }
     })
@@ -67,8 +72,7 @@ async function fallbackPng(): Promise<Buffer> {
         .toBuffer();
 }
 
-/** 构建时为文章生成“标题 + 署名”的社交分享卡（1200×630 PNG） */
-export async function generateOgImage(title: string): Promise<Buffer> {
+async function generateOgImage(title) {
     try {
         const fonts = await loadFonts();
         const svg = await satori(
@@ -163,3 +167,22 @@ export async function generateOgImage(title: string): Promise<Buffer> {
         return fallbackPng();
     }
 }
+
+// frontmatter 解析与 astro.config.mjs 的草稿扫描同一套路：单行 title + draft 标记
+const posts = readdirSync(blogDir)
+    .filter((name) => /\.(md|mdx)$/.test(name))
+    .map((name) => {
+        const frontmatter = readFileSync(path.join(blogDir, name), 'utf-8').match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '';
+        const title = (frontmatter.match(/^title:\s*(.+)$/m)?.[1] ?? '').trim().replace(/^['"]|['"]$/g, '');
+        const draft = /^draft:\s*true\s*$/m.test(frontmatter);
+        return { slug: name.replace(/\.(md|mdx)$/, ''), title, draft };
+    })
+    .filter((p) => p.title && !p.draft);
+
+mkdirSync(outDir, { recursive: true });
+for (const { slug, title } of posts) {
+    const png = await generateOgImage(title);
+    writeFileSync(path.join(outDir, `${slug}.png`), png);
+    console.log(`  og/${slug}.png`);
+}
+console.log(`OG 分享卡：${posts.length} 张已生成 → dist/client/og/`);

@@ -32,11 +32,11 @@ SAP 是服务企业发展的管理软件。这些年用下来，我慢慢理解�
 
 ## 我的个人项目：
 
-- [DYNAMIC_DATA](https://github.com/Jack-Liang/DYNAMIC_DATA)：用于在代码中动态生成数据类型的类，支持 JSON 嵌套和预配置。
-- [linktodo](https://linktodo.app/)：一个协同任务管理工具，用于在团队中管理任务和项目。
+- [sap-for-agents](https://github.com/Jack-Liang/sap-for-agents)：把 SAP NWRFC SDK 封装成长驻 HTTP 服务，通过 RESTful 接口调用任意 SAP RFC/BAPI，让 AI Agent 和其他服务无需安装 SDK、一个 JSON POST 即可访问 SAP。
 - [abap-course](https://github.com/Jack-Liang/abap-course)：一套从零开始的 ABAP 开发实战课程，24 课时以 Demo 驱动 + 代码拆解的方式带你掌握 ABAP 开发核心技能。
 - [ABAP-Render-Kit](https://github.com/Jack-Liang/ABAP-Render-Kit)：一个现代 ABAP UI 框架（提取自 abapGit），让你在 SAP GUI 里用熟悉的 ABAP 模式构建富交互的 HTML 界面，内置 ECharts 图表组件。
-- [sap-for-agents](https://github.com/Jack-Liang/sap-for-agents)：把 SAP NWRFC SDK 封装成长驻 HTTP 服务，通过 RESTful 接口调用任意 SAP RFC/BAPI，让 AI Agent 和其他服务无需安装 SDK、一个 JSON POST 即可访问 SAP。
+- [DYNAMIC_DATA](https://github.com/Jack-Liang/DYNAMIC_DATA)：用于在代码中动态生成数据类型的类，支持 JSON 嵌套和预配置。
+- [linktodo](https://linktodo.app/)：一个协同任务管理工具，用于在团队中管理任务和项目。
 
 ## 我的其他编程技术栈：
 
