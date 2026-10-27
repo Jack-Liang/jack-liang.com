@@ -62,7 +62,7 @@ python sap_src_unpack.py <包.zip> --stdout | more
 
 输出长这样：
 
-```
+```text
 sap_src_<包名>/
 ├── ZDEMO_IF_SBSJ.abap       每个对象一个文件
 ├── ZDEMO_IF_SBSJ_2.abap     同名对象自动加 _2 后缀
@@ -77,7 +77,7 @@ sap_src_<包名>/
 
 从 SE38 / SE80 用"程序下载"导出来的包，打开是一个 ZIP，里面两个文件：
 
-```
+```text
 <任意名字>.zip
 ├── K984699.<ext>    对象头：程序名、属性、时间戳、依赖
 └── R984699.<ext>    对象体：文本头 + 一堆压缩数据
@@ -91,7 +91,7 @@ K / R 是德文 **Kopf**（头）和 **Rumpf**（体）。这套容器格式是 
 
 R 体的内容是一串压缩块，每块长这样：
 
-```
+```text
 偏移:  0   1   2   3   4   5   6   7
       len(len32 LE)  alg  1f  9d  extra
                     ^^^^^^^ magic
@@ -107,7 +107,7 @@ R 体的内容是一串压缩块，每块长这样：
 
 压缩解开之后，是一串记录，每条记录 4 字节头加 payload：
 
-```
+```text
 00 00 <len: u16be> <payload>
 ```
 
@@ -149,7 +149,7 @@ def _odd_zero_ratio(payload):
 
 解包时还必须剔除导出包交错写入的对象清单行，比如：
 
-```
+```text
 FUGRZDEMOGIF15_SW                           FUNCZDEMO_IF_SBRQ
 ED1K984699          000002LIMUFUNCZDEMO_IF_SBSJ
 ```

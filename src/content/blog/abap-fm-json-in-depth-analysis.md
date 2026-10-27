@@ -95,7 +95,7 @@ abap_fm_json
 
 假设你在浏览器里输入这样一条地址：
 
-```
+```text
 http://your-sap-server:8000/fmcall/BAPI_USER_GET_DETAIL?USERNAME=JACK
 ```
 
@@ -482,13 +482,13 @@ endif.
 
 效果：
 
-```
+```text
 ?USERNAME=JACK&LANGUAGE=EN
 ```
 
 ↓
 
-```
+```json
 {"USERNAME":"JACK","LANGUAGE":"EN"}
 ```
 
@@ -681,7 +681,7 @@ endcase.
 
 ### 完整输入映射链路
 
-```
+```text
 HTTP 请求
    │
    ├─ GET query string
@@ -1014,7 +1014,7 @@ CALL METHOD me->serialize_json ...
 
 架构全链路回顾：
 
-```
+```text
 HTTP 请求
    │
    │  路径: /fmcall/BAPI_USER_GET_DETAIL?USERNAME=JACK

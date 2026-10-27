@@ -48,7 +48,7 @@ AJSON 走的是**第三条路**：把 JSON
 解析成一棵**扁平的节点表**（而不是对象树），既保留"动态"的特点，又能用路径做
 O(log n) 定位，并且可以随时在"动态"和"固定结构"之间来回切换。
 
-```
+```text
 固定结构 (to_abap)  ←→  节点表 (mt_json_tree)  ←→  JSON 字符串
    ↑ 按需转换              ↑ 核心表示              ↑ 解析 / 序列化
 ```
@@ -357,7 +357,7 @@ methods rename_node
 
 用 abapGit 克隆到目标包：
 
-```
+```text
 https://github.com/sbcgua/ajson.git
 ```
 

@@ -48,7 +48,7 @@ ENDLOOP.
 
 这其实是接口没有识别出文档的编码方式所致，需要增加一个 codepage 传参来声明文档的编码格式。
 
-```
+```abap
 CALL FUNCTION 'GUI_UPLOAD'
   EXPORTING
     filename   = lv_file_name

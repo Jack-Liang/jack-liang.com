@@ -79,19 +79,19 @@ HTTP 请求的方式调用 SAP 功能。
 
 配置完成后，通过以下 URL 模式调用：
 
-```
+```text
 http(s)://your_sap_server:<port>/fmcall/<function_module_name>?<parameters>
 ```
 
 **简单 GET 调用示例：**
 
-```
+```http
 GET /fmcall/RFC_SYSTEM_INFO?format=json&lowercase=X
 ```
 
 **复杂参数 POST 调用示例：**
 
-```
+```http
 POST /fmcall/BAPI_SALESORDER_CREATEFROMDAT2
 Content-Type: application/json
 
@@ -179,7 +179,7 @@ BUILD_PARAMS 方法通过 `RFC_GET_FUNCTION_INTERFACE_P`
 
 ### 三、代码组织与抽象层次
 
-```
+```text
 ZCL_JSON_HANDLER（核心类，实现 IF_HTTP_EXTENSION）
 ├── HANDLE_REQUEST()          — 请求入口，编排整体流程
 ├── BUILD_PARAMS()            — 动态参数发现与绑定

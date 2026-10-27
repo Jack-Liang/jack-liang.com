@@ -85,7 +85,7 @@ Terminal，命令行，会在程序里出现 CMD 窗口。
 
 ![Docker 中的 Terminal](https://img.jack-liang.com/abap-cloud-developer-trial/p4.jpg)
 
-```
+```bash
 docker pull sapse/abap-cloud-developer-trial:<TAGNAME>
 ```
 
@@ -106,13 +106,13 @@ Tags 确定。
 
 GNU/Linux
 
-```
+```bash
 docker run --stop-timeout 3600 -it --name a4h -h vhcala4hci sapse/abap-cloud-developer-trial:<TAGNAME>
 ```
 
 其他系统
 
-```
+```bash
 docker run --stop-timeout 3600 -i --name a4h -h vhcala4hci -p 3200:3200 -p 3300:3300 -p 8443:8443 -p 30213:30213 -p 50000:50000 -p 50001:50001 sapse/abap-cloud-developer-trial:<TAGNAME> -skip-limits-check
 ```
 
@@ -165,13 +165,13 @@ licenses，过期后可再次申请。
 
 开机
 
-```
+```bash
 docker start -ai a4h
 ```
 
 关机
 
-```
+```bash
 docker stop --time 3600 a4h
 ```
 
@@ -185,7 +185,7 @@ a4h 是容器的名称。
 port TCP 0.0.0.0:3200 -> 127.0.0.1:0: listen tcp 0.0.0.0:3200: bind: An attempt
 was made to access a socket in a way forbidden by its access permissions.
 
-```
+```bash
 # 查看hyper-v启动后的保留端口范围
 netsh interface ipv4 show excludedportrange protocol=tcp
 
