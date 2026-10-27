@@ -1,7 +1,7 @@
 ---
 title: 【开发第一性原理】08 · 魔术数：你现在记得，未来的你不记得
 excerpt: 字面量是给现在的自己写的，常量是给未来的自己写的。写 IF status = '01' 时知道 01 是新建，三个月后就不一定了。这篇讲一个判断标准——这个值会变吗、多久一次、谁能改——加五个经典做法和一份自查清单。
-publishDate: '2026-10-20'
+publishDate: 'Oct 27 2026'
 tags:
   - 开发第一性原理
   - 开发思想
@@ -13,11 +13,11 @@ tags:
 isFeatured: true
 draft: false
 seo:
-  title: 别用理想化数据测——测试能通过不等于代码能跑 | 开发第一性原理 07
-  description: 测试能通过不等于代码能跑。配 ABAP Unit 实战（Function / Form 怎么测）+ 数据边界用例清单 + 测试金字塔。
+  title: 开发第一性原理 08
+  description: 魔术数：你现在记得，未来的你不记得。
 featureImage:
   src: 'https://img.jack-liang.com/dev-first-principles/pexels_26584993_large2x.jpg'
-  alt: 开发第一性原理 07 - 别用理想化数据测
+  alt: 开发第一性原理 08 - 魔术数
 ---
 
 > **系列说明**：这个系列写我在开发里反复验证过的基本规律。不追新概念，只讲那些早晚会再次应验的东西。
