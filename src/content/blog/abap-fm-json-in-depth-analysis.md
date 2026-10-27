@@ -489,7 +489,7 @@ endif.
 ↓
 
 ```json
-{"USERNAME":"JACK","LANGUAGE":"EN"}
+{ "USERNAME": "JACK", "LANGUAGE": "EN" }
 ```
 
 这段代码没有用任何 JSON 库，就是逐行拼接字符串。它假设所有 query string
