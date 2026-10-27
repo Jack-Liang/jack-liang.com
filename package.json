@@ -1,6 +1,7 @@
 {
     "name": "ovidius-astro-theme",
     "type": "module",
+    "packageManager": "pnpm@12.15.0",
     "version": "1.0.0",
     "scripts": {
         "dev": "astro dev",
