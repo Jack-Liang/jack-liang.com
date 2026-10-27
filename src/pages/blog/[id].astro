@@ -7,6 +7,7 @@ import Subscribe from '../../components/Subscribe.astro';
 import siteConfig from '../../data/site-config';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { sortPostsByDateDesc } from '../../utils/post-utils';
+import { wordBreakdown } from '../../utils/word-count';
 
 export async function getStaticPaths() {
     const posts = (await getCollection('blog')).sort(sortPostsByDateDesc);
@@ -30,9 +31,7 @@ const { Content, headings } = await render(post);
 const tocItems = headings.filter((h) => h.depth === 2 || h.depth === 3);
 
 // 预计阅读时长：中文按 350 字/分钟，英文按 200 词/分钟
-const bodyText = post.body ?? '';
-const cjkChars = (bodyText.match(/[\u4e00-\u9fff]/g) ?? []).length;
-const latinWords = (bodyText.replace(/[\u4e00-\u9fff]/g, ' ').match(/[a-zA-Z]+/g) ?? []).length;
+const { cjkChars, latinWords } = wordBreakdown(post.body ?? '');
 const readingMinutes = Math.max(1, Math.round(cjkChars / 350 + latinWords / 200));
 
 const jsonLd = {

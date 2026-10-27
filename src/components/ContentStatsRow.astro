@@ -2,11 +2,14 @@
 import { getCollection } from 'astro:content';
 import { parseNotes } from '../utils/notes-parser';
 import { sortPostsByDateDesc } from '../utils/post-utils';
+import { countWords, formatWordCount } from '../utils/word-count';
 
 interface StatItem {
     label: string;
     count: number;
     unit: string;
+    /** 追加在数量后面的补充文字，如「文章」卡片的总字数 */
+    suffix?: string;
     latest?: string;
     href: string;
 }
@@ -27,6 +30,11 @@ const posts = (await getCollection('blog'))
     .sort(sortPostsByDateDesc);
 const blogLatest = posts[0]?.data.title;
 
+// --- 写作总字数（已发布文章 + 随想）---
+const totalWords =
+    posts.reduce((sum, post) => sum + countWords(post.body ?? ''), 0) +
+    allNotes.reduce((sum, note) => sum + countWords(note.rawContent), 0);
+
 // --- 拾光 ---
 const photos = (await getCollection('photography'))
     .filter(({ data }) => !data.draft)
@@ -38,6 +46,7 @@ const items: StatItem[] = [
         label: '文章',
         count: posts.length,
         unit: '篇',
+        suffix: `，${formatWordCount(totalWords)} 字`,
         latest: blogLatest,
         href: '/blog/'
     },
@@ -56,6 +65,7 @@ const items: StatItem[] = [
         href: '/notes/'
     }
 ];
+
 ---
 
 <nav class="max-w-6xl mx-auto" aria-label="内容栏目">
@@ -71,7 +81,7 @@ const items: StatItem[] = [
                             {item.label}
                         </h3>
                         <span class="text-xs text-slate-400 dark:text-slate-500">
-                            {item.count} {item.unit}
+                            {item.count} {item.unit}{item.suffix}
                         </span>
                     </div>
                     <p class="mt-1.5 truncate text-sm text-slate-500 dark:text-slate-400">
