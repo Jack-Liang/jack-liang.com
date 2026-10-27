@@ -10,16 +10,20 @@ import { sortPostsByDateDesc } from '../../utils/post-utils';
 import { wordBreakdown } from '../../utils/word-count';
 
 export async function getStaticPaths() {
-    const posts = (await getCollection('blog')).sort(sortPostsByDateDesc);
-    const postCount = posts.length;
-    return posts.map((post, index) => ({
-        params: { id: post.id },
-        props: {
-            post,
-            prevPost: index + 1 !== postCount ? posts[index + 1] : null,
-            nextPost: index !== 0 ? posts[index - 1] : null
-        }
-    }));
+    const allPosts = (await getCollection('blog')).sort(sortPostsByDateDesc);
+    // 草稿保留直链访问，但“上一篇/下一篇”只在已发布文章之间取，避免正式页面链到草稿
+    const published = allPosts.filter(({ data }) => !data.draft);
+    return allPosts.map((post) => {
+        const index = published.indexOf(post);
+        return {
+            params: { id: post.id },
+            props: {
+                post,
+                prevPost: index !== -1 && index + 1 < published.length ? published[index + 1] : null,
+                nextPost: index > 0 ? published[index - 1] : null
+            }
+        };
+    });
 }
 
 const { href } = Astro.url;
@@ -47,14 +51,15 @@ const jsonLd = {
 };
 ---
 
-<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+{!post.data.draft && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
 <BaseLayout
     title={seo?.title ?? title}
     description={seo?.description ?? excerpt}
-    image={seo?.image ?? { src: `/og/${post.id}.png`, alt: title }}
+    image={seo?.image ?? (post.data.draft ? siteConfig.image : { src: `/og/${post.id}.png`, alt: title })}
     pageType="article"
+    noindex={post.data.draft}
 >
-    <main class="px-4 py-12 grow sm:px-8 sm:py-16">
+    <main class="px-4 py-12 grow sm:px-8 sm:py-16" data-pagefind-ignore={post.data.draft ? '' : undefined}>
         <div
             id="reading-progress"
             aria-hidden="true"
@@ -345,7 +350,7 @@ const jsonLd = {
 
         // 代码块一键复制：给每个 prose 内的 pre 注入按钮
         function bindCopyButtons() {
-            document.querySelectorAll('.prose pre').forEach((pre) => {
+            document.querySelectorAll<HTMLElement>('.prose pre').forEach((pre) => {
                 if (pre.dataset.copyBound) return;
                 pre.dataset.copyBound = '1';
                 const btn = document.createElement('button');
