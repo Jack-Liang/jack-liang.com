@@ -1,29 +1,32 @@
 name: CI
 
 on:
-  push:
-  pull_request:
+    push:
+    pull_request:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-      # pnpm 版本取自 package.json 的 packageManager 字段（当前 pnpm@12.15.0），
-      # 与 Cloudflare 构建保持一致
-      - uses: pnpm/action-setup@v4
+            # pnpm 版本取自 package.json 的 packageManager 字段（当前 pnpm@12.15.0），
+            # 与 Cloudflare 构建保持一致
+            - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: pnpm
 
-      - name: 安装依赖（与 Cloudflare 构建同款命令）
-        run: pnpm install --frozen-lockfile
+            - name: 安装依赖（与 Cloudflare 构建同款命令）
+              run: pnpm install --frozen-lockfile
 
-      - name: 类型检查
-        run: pnpm check
+            - name: 类型检查
+              run: pnpm check
 
-      - name: 构建
-        run: pnpm build
+            - name: 格式检查
+              run: pnpm format:check
+
+            - name: 构建
+              run: pnpm build

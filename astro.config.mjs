@@ -23,6 +23,11 @@ const draftSlugs = new Set(
 export default defineConfig({
     site: 'https://jack-liang.com',
     output: 'static',
+    // 站内链接 hover 预取，翻页/进文章接近秒开
+    prefetch: {
+        prefetchAll: true,
+        defaultStrategy: 'hover'
+    },
     devToolbar: {
         enabled: false
     },

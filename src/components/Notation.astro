@@ -85,7 +85,7 @@ const dataOptions = {
         function showAnnotation(el, opts) {
             let annotation = annotations.get(el);
             if (!annotation) {
-                annotation = RoughNotation.annotate(el, opts);
+                annotation = window.RoughNotation.annotate(el, opts);
                 annotations.set(el, annotation);
             }
             if (opts.show) {

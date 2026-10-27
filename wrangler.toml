@@ -3,8 +3,3 @@ compatibility_date = "2026-06-01"
 
 [assets]
 directory = "./dist"
-
-[[kv_namespaces]]
-binding = "SESSION"
-id = "3e73f1325a8548799b553f62acadc8ff"
-preview_id = "3e73f1325a8548799b553f62acadc8ff"

@@ -1,2 +1,7 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+
 /for-agent/ai-subscription.md
   Content-Type: text/plain; charset=utf-8
