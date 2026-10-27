@@ -8,7 +8,6 @@ tags:
   - SAP
   - 单元测试
   - 测试金字塔
-isFeatured: true
 draft: false
 seo:
   title: 别用理想化数据测——测试能通过不等于代码能跑 | 开发第一性原理 07
