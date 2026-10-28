@@ -19,7 +19,6 @@
         "@astrojs/mdx": "^8.1.1",
         "@astrojs/rss": "^4.0.19",
         "@astrojs/sitemap": "^3.7.4",
-        "@fontsource-variable/figtree": "^5.2.10",
         "@resvg/resvg-js": "^2.6.2",
         "@tailwindcss/vite": "^4.3.0",
         "astro": "^7.4.2",

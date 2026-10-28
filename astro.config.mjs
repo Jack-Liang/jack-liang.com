@@ -5,7 +5,7 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import pagefind from 'astro-pagefind';
-import { defineConfig } from 'astro/config';
+import { defineConfig, fontProviders } from 'astro/config';
 
 // 草稿的 slug 集合：glob loader 的 id 就是文件名，构建前从 frontmatter 扫出来供 sitemap 过滤
 const blogDir = fileURLToPath(new URL('./src/content/blog/', import.meta.url));
@@ -36,6 +36,19 @@ export default defineConfig({
         prefetchAll: true,
         defaultStrategy: 'hover'
     },
+    // 字体交给 Astro fonts API：自动子集化、preload、生成度量对齐的 fallback 字体
+    fonts: [
+        {
+            provider: fontProviders.fontsource(),
+            name: 'Figtree Variable',
+            cssVariable: '--font-figtree',
+            weights: ['100 900'],
+            styles: ['normal', 'italic'],
+            subsets: ['latin']
+        }
+    ],
+    // 站点未使用 session，显式关闭适配器自动配置的 SESSION KV 绑定
+    session: false,
     devToolbar: {
         enabled: false
     },

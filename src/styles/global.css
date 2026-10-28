@@ -4,7 +4,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: 'Figtree Variable', system-ui, sans-serif;
+    --font-sans: var(--font-figtree), system-ui, sans-serif;
 
     --color-primary: #02738f;
     --color-primary-dark: #38b2c8;

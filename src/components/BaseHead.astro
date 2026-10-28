@@ -1,7 +1,5 @@
 ---
-import figtreeItalic from '@fontsource-variable/figtree/files/figtree-latin-wght-italic.woff2?url';
-import figtreeNormal from '@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2?url';
-import { getImage } from 'astro:assets';
+import { Font, getImage } from 'astro:assets';
 import siteConfig from '../data/site-config';
 import type { ImageInput } from '../types';
 
@@ -58,27 +56,7 @@ function formatCanonicalURL(url: string | URL) {
 <title>{title}</title>
 <meta name="generator" content={Astro.generator} />
 
-<link rel="preload" as="font" type="font/woff2" href={figtreeNormal} crossorigin="anonymous" />
-<link rel="preload" as="font" type="font/woff2" href={figtreeItalic} crossorigin="anonymous" />
-
-<style is:inline define:vars={{ figtreeNormal, figtreeItalic }}>
-    @font-face {
-        font-family: 'Figtree Variable';
-        font-style: normal;
-        font-weight: 100 900;
-        font-display: swap;
-        src: url(var(--figtreeNormal)) format('woff2');
-        font-named-instance: 'Regular';
-    }
-    @font-face {
-        font-family: 'Figtree Variable';
-        font-style: italic;
-        font-weight: 100 900;
-        font-display: swap;
-        src: url(var(--figtreeItalic)) format('woff2');
-        font-named-instance: 'Italic';
-    }
-</style>
+<Font cssVariable="--font-figtree" preload />
 
 <!-- Low Priority Global Metadata -->
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
