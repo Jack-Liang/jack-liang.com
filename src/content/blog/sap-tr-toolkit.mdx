@@ -1,7 +1,7 @@
 ---
 title: '拆开 SAP 没有文档的源码包：我写了 sap-tr-toolkit'
 excerpt: 我最近开源的一个 SAP 传输请求工具集：ABAP 程序 ZUD 负责把已释放的传输请求打包下载、上传导入；Python 解包器负责把 SE38 导出的 K/R 源码包还原成可读 ABAP。重点讲这个 SAP 未公开的源码包格式是怎么逆向出来的，以及过程中踩过的两个坑。
-publishDate: 'Oct 27 2026'
+publishDate: 'Oct 28 2026'
 tags:
   - SAP
   - ABAP
@@ -15,16 +15,15 @@ featureImage:
 seo:
   image:
     src: 'https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
-draft: true
 ---
 
 import Notation from '../../components/Notation.astro';
 
 SAP 项目做久了，总会遇到一些"代码出不了门"的时刻。
 
-沙盒系统没配传输路由、接手的外购系统只拿到一个导出包、想把某段代码发给同事参考，结果发现 SE38 导出来的东西根本不是文本——用编辑器打开是一堆二进制乱码。
+沙盒系统没配传输路由、接手的外购系统只拿到一个导出包、想把某段代码发给同事参考，SE38 中一个个导出程序、复制表、结构更别提有多繁琐了。
 
-我最近把代码搬运这件事做成了一个工具集，开源在 GitHub 上，叫 **sap-tr-toolkit**。
+我最近从查了一些开源项目，把代码搬运这件事做成了一个工具集，开源在 GitHub 上，叫 **sap-tr-toolkit**。
 
 仓库地址：https://github.com/Jack-Liang/sap-tr-toolkit
 
@@ -35,17 +34,14 @@ SAP 项目做久了，总会遇到一些"代码出不了门"的时刻。
 
 一个是 TR 整体搬运，一个是只有源码包时的还原，组合起来能覆盖大部分场景。
 
-<Notation type="highlight" color="#fef08a">
-  这篇文重点不是"怎么用"，而是这个 SAP 没有公开文档的源码包格式是怎么逆向出来的
-</Notation>
-——整个过程比写工具本身有意思得多。
+<Notation type="highlight" color="#fef08a">这篇文重点不是"怎么用"，而是一起来看看 SAP 的请求文件是怎么逆向出来的</Notation>——整个过程比写工具本身有意思得多。
 
 # 先看效果
 
 ZUD 是一个标准的 SE38 报表程序，安装就是新建程序、粘贴代码、激活。界面两个单选：
 
 - **下载**：填个 TR 号，选个文件夹，程序会把服务器上这个 TR 对应的 cofile / data 两个文件打包成 ZIP 保存到本地
-- **上传**：选个 ZIP，程序把里面的 cofile / data 写回服务器的 `DIR_TRANS/cofiles` 和 `data` 目录，然后给你三个后续动作：立即触发 STMS 导入 / 只填充 E07\* 传输表（等价于 `tp cmd <TR> <SID>` 的对象清单导入，不真导入）/ 什么都不做
+- **上传**：选个 ZIP，程序把里面的 cofile / data 写回服务器的 `DIR_TRANS/cofiles` 和 `data` 目录，然后触发 STMS 导入
 
 有了 ZIP，TR 就可以在没有传输路由的两个系统之间"人工快递"了。
 
@@ -77,17 +73,17 @@ sap_src_<包名>/
 
 # 源码包里到底装了什么
 
-从 SE38 / SE80 用"程序下载"导出来的包，打开是一个 ZIP，里面两个文件：
+从 SE38 用"程序下载"导出来的包，打开是一个 ZIP，里面两个文件：
 
 ```text
-<任意名字>.zip
+<请求号>.zip
 ├── K984699.<ext>    对象头：程序名、属性、时间戳、依赖
 └── R984699.<ext>    对象体：文本头 + 一堆压缩数据
 ```
 
-K / R 是德文 **Kopf**（头）和 **Rumpf**（体）。这套容器格式是 SAP GUI 经典 ABAP 编辑器导出源码用的，SAP 官方给 abapGit 维护的 `abap-file-formats` 仓库**并不覆盖它**——也就是说，这东西没有公开文档。
+K / R 是德文 **Kopf**（头）和 **Rumpf**（体）。SAP 中进行请求传输传的就是这套容器格式打包的文件，这东西没有公开文档。
 
-我完全是拿真实样本逆向出来的。拆开看，它是两层结构：外面一层压缩，里面一层记录。
+拆开看，它是两层结构：外面一层压缩，里面一层记录。
 
 ## 压缩层：每块 8 字节头 + LZH
 
@@ -142,10 +138,7 @@ def _odd_zero_ratio(payload):
 
 拿真实样本验证：1111 条真 UTF-16、259 条 ASCII 冒充者，这个比例的分布把两者分得干干净净，阈值取 0.9 就行。
 
-<Notation type="box" color="#3b82f6">
-  这是逆向工程里很典型的一课：判据要从数据本身找，而不要想当然
-</Notation>
-。格式文档里不会告诉你"有些记录撒谎了"，只有把真实数据摊开看，才能发现奇数位零字节这个特征。
+<Notation type="box" color="#3b82f6">这是逆向工程里很典型的一课：判据要从数据本身找，而不要想当然。</Notation>格式文档里不会告诉你"有些记录撒谎了"，只有把真实数据摊开看，才能发现奇数位零字节这个特征。
 
 # 第二个坑：OTHERS = 3. 被误杀
 
@@ -162,10 +155,7 @@ ED1K984699          000002LIMUFUNCZDEMO_IF_SBSJ
 
 这行是每个 ABAP 开发者都写过的东西——`CATCH cx_root INTO ... ` 后面的标准收尾。`OTHERS` 确实是 ABAP 关键字，但它不在我那份关键字表里，于是这行代码被当成元数据删掉了。
 
-<Notation type="highlight" color="#fca5a5">
-  这是代码还原工具最致命的一类错误：静默丢代码
-</Notation>
-。解出来少一行，你根本不会察觉。
+<Notation type="highlight" color="#fca5a5">这是代码还原工具最致命的一类错误：静默丢代码。</Notation>解出来少一行，你根本不会察觉。
 
 解法是反过来，改成**白名单式**：只在同时满足两个条件时才判为元数据——
 
@@ -200,7 +190,7 @@ ED1K984699          000002LIMUFUNCZDEMO_IF_SBSJ
 
 诚实交代一下边界：
 
-- 只处理 K/R 体压缩包。SE38 里"Download as text"导出的 `.abap` / `.txt` 本来就是文本，不需要这个工具
+- 只处理 K/R 体压缩包。
 - 更多 SAP 对象类型（独立 CLAS / INTF、`.prog.xml` 等）还没覆盖，遇到新类型需要补充切分规则
 - 本仓库整体按 GPL-2.0 发布（因为 LZH 移植源码是 GPL 的）；ZUD 部分是 MIT 许可的第三方代码，来自 [furkancosgun/Transport-Management-Tool](https://github.com/furkancosgun/Transport-Management-Tool)，我只做了格式化加一处小改动
 
@@ -213,3 +203,7 @@ ED1K984699          000002LIMUFUNCZDEMO_IF_SBSJ
 - 仓库：https://github.com/Jack-Liang/sap-tr-toolkit
 - 格式说明和坑的完整记录都在 README 里
 - 欢迎提 issue——尤其是遇到解不开的包，样本（脱敏后）对完善识别规则非常有帮助
+
+## 致谢
+- [【furkancosgun/Transport-Management-Tool】](https://github.com/furkancosgun/Transport-Management-Tool)
+- [【pysap】](https://github.com/OWASP/pysap)
