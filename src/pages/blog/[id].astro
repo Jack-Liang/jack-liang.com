@@ -439,8 +439,9 @@ const jsonLd = {
         });
     </script>
     <script>
-        // 浏览量：进文章页上报一次，POST 返回去重后的最新计数
-        (async () => {
+        // 浏览量：每次进入文章页上报一次，POST 返回去重后的最新计数
+        // ClientRouter 切换页面时脚本不会重跑，所以统一挂在 astro:page-load 上（首屏也会触发）
+        async function reportView(): Promise<void> {
             const viewEl = document.getElementById('view-count');
             const slug = viewEl?.getAttribute('data-slug');
             if (!viewEl || !slug) return;
@@ -455,6 +456,8 @@ const jsonLd = {
             } catch {
                 // 统计不可用时不影响阅读
             }
-        })();
+        }
+
+        document.addEventListener('astro:page-load', reportView);
     </script>
 </BaseLayout>
