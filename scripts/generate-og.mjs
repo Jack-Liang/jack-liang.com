@@ -1,16 +1,24 @@
 // 构建后运行（astro build && node scripts/generate-og.mjs）：
-// 为每篇已发布文章生成「标题 + 署名」的社交分享卡到 dist/og/<slug>.png。
+// 为每篇已发布文章生成「标题 + 署名」的社交分享卡到 dist/client/og/<slug>.png。
 // satori/resvg/sharp 都是 Node 原生或纯构建期依赖，放在 Astro 路由里会被
 // Cloudflare Worker 打包器扫描导致构建失败，因此与 Astro 服务端图彻底解耦。
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+//
+// 缓存：产物提交在仓库根的 og/ 目录（manifest.json 记录 slug → 内容哈希）。
+// 哈希 = 模板版本 + slug + 标题，没变就直接拷贝旧图，跳过渲染与字体下载；
+// Cloudflare 的构建机不保留 .cache/ 等任意目录，提交产物是唯一跨构建可靠的缓存。
+// 改卡片样式时把 TEMPLATE_VERSION 加一，下次构建全量重画后一并提交。
+import { createHash } from 'node:crypto';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import sharp from 'sharp';
 
+const TEMPLATE_VERSION = 1;
 const siteName = 'Jack-Liang';
 const blogDir = path.resolve('src/content/blog');
 const outDir = path.resolve('dist/client/og');
+const cacheDir = path.resolve('og');
+const manifestPath = path.join(cacheDir, 'manifest.json');
 
 const FONT_CACHE_DIR = path.join(process.cwd(), '.cache', 'fonts');
 const FONT_FILES = [
@@ -63,8 +71,9 @@ function loadFonts() {
     return fontsPromise;
 }
 
-/** 纯色兜底卡：字体不可用等极端情况下也能给出 og:image */
+/** 纯色兜底卡：字体不可用等极端情况下也能给出 og:image。sharp 只在这里用，按需加载省启动时间 */
 async function fallbackPng() {
+    const { default: sharp } = await import('sharp');
     return sharp({
         create: { width: 1200, height: 630, channels: 4, background: { r: 238, g: 240, b: 244, alpha: 1 } }
     })
@@ -179,10 +188,47 @@ const posts = readdirSync(blogDir)
     })
     .filter((p) => p.title && !p.draft);
 
-mkdirSync(outDir, { recursive: true });
-for (const { slug, title } of posts) {
-    const png = await generateOgImage(title);
-    writeFileSync(path.join(outDir, `${slug}.png`), png);
-    console.log(`  og/${slug}.png`);
+let manifest;
+try {
+    manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+} catch {
+    manifest = {};
 }
-console.log(`OG 分享卡：${posts.length} 张已生成 → dist/client/og/`);
+
+const hashOf = (post) => createHash('sha256').update([TEMPLATE_VERSION, post.slug, post.title].join('\n')).digest('hex');
+
+mkdirSync(cacheDir, { recursive: true });
+mkdirSync(outDir, { recursive: true });
+
+let hits = 0;
+const rendered = [];
+const liveSlugs = new Set(posts.map((p) => p.slug));
+for (const post of posts) {
+    const hash = hashOf(post);
+    const cached = path.join(cacheDir, `${post.slug}.png`);
+    const dest = path.join(outDir, `${post.slug}.png`);
+    if (manifest[post.slug] === hash && existsSync(cached)) {
+        copyFileSync(cached, dest);
+        hits++;
+        continue;
+    }
+    const png = await generateOgImage(post.title);
+    writeFileSync(cached, png);
+    copyFileSync(cached, dest);
+    manifest[post.slug] = hash;
+    rendered.push(post.slug);
+}
+
+// 文章删除/改名后清理仓库里的孤儿图
+for (const file of readdirSync(cacheDir)) {
+    if (!file.endsWith('.png')) continue;
+    if (!liveSlugs.has(file.replace(/\.png$/, ''))) {
+        rmSync(path.join(cacheDir, file));
+        delete manifest[file.replace(/\.png$/, '')];
+        console.log(`  已清理孤儿图 og/${file}`);
+    }
+}
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 4) + '\n');
+
+console.log(`OG 分享卡：${hits} 张命中缓存，${rendered.length} 张重新渲染 → dist/client/og/`);
+rendered.forEach((slug) => console.log(`  og/${slug}.png`));
