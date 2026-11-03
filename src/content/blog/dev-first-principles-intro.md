@@ -47,7 +47,7 @@ seo:
 
 - **[05 · 为什么"友好化"反而害了排障](/blog/dev-first-principles-05-friendly-error-messages)**
   —— 包装不替换、累加不丢弃，消息链不能断
-- **[06 · 先定界，再写码](/blog/dev-first-principles-06-boundary-first)** ——
+- **[06 · 先定界，再写码](/blog/dev-first-principles-06-boundaries-before-code)** ——
   和业务把数据边界讲清楚
 
 ### 开发者测试 · 07
@@ -64,7 +64,7 @@ seo:
 
 - **[08 · 魔术数 = 你现在记得，未来的你不记得](/blog/dev-first-principles-08-magic-numbers)**
   —— 字面量抽常量
-- **09 · 配置表泛滥怎么治理** —— 配置表不是建完就完，是要被找到的
+- **[09 · 配置表泛滥怎么治理](/blog/dev-first-principles-09-config-table-governance)** —— 配置表不是建完就完，是要被找到的
 - **10 · 自我描述的代码** —— 命名 + 结构 + 职责，让代码自带导航
 - **11 · 文档和代码的有机结合** —— 别让它们各自分裂
 - **12 · 包间引用与迁移治理** —— 让规范不只是文档
