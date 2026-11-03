@@ -12,7 +12,8 @@
         "astro": "astro",
         "check": "astro check",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "prepare": "husky"
     },
     "dependencies": {
         "@astrojs/cloudflare": "^14.4.2",
@@ -35,11 +36,16 @@
     "devDependencies": {
         "@astrojs/check": "^0.9.12",
         "@tailwindcss/typography": "^0.5.19",
+        "husky": "^9.1.7",
+        "lint-staged": "^17.6.0",
         "prettier": "^3.9.10",
         "prettier-plugin-astro": "^1.1.2",
         "prettier-plugin-tailwindcss": "^0.8.1",
         "terser": "^5.51.2",
         "typescript": "^6.0.3",
         "wrangler": "^4.152.0"
+    },
+    "lint-staged": {
+        "*": "prettier --write --ignore-unknown"
     }
 }
