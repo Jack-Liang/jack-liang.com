@@ -10,7 +10,6 @@ tags:
   - 代码规范
   - 可维护性
   - 重构
-isFeatured: true
 draft: false
 seo:
   title: 开发第一性原理 08

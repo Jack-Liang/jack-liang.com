@@ -1,0 +1,125 @@
+---
+title: 几天做完几十人天的 ABAP 项目：我让 AI 通过网关直接开发 SAP
+excerpt: 我的开源项目 sap-for-agents 把 SAP 的 RFC 和 ADT 两套底层能力包装成 HTTP API 交给 AI Agent——搜函数、读源码、写代码、激活、跑测试、查 dump 全部自服务。最近我用它开发了 zom_org（一个 OM 组织对象维护平台，约 30 个类、5 个 RFC、完整文档体系），几天时间做完了按传统方式要几十个人天的活。这篇讲讲这个开发-验证闭环是怎么转起来的。
+publishDate: 'Nov 04 2026'
+tags:
+  - SAP
+  - ABAP
+  - AI
+  - Agent
+  - RFC
+  - ADT
+  - 开源项目
+  - 开发者工具
+isFeatured: true
+featureImage:
+  src: 'https://img.jack-liang.com/sap-for-agents-abap-dev-in-days/cover.jpg'
+  alt: 深夜工作台——sap-for-agents 让 AI 直接开发 SAP
+seo:
+  image:
+    src: 'https://img.jack-liang.com/sap-for-agents-abap-dev-in-days/cover.jpg'
+---
+
+import Notation from '../../components/Notation.astro';
+
+先说结果。
+
+最近我做了一个 SAP HR 组织管理（OM）方向的项目：**zom_org**，一个组织对象维护平台的 SAP 侧——校验、装配、加锁、落库（HRP 表）、日志、报错全链路，外加 5 个对外 RFC 接口和完整的 ABAP Unit 测试。
+
+规模大概是：约 30 个 ABAP 类、6 个接口、一整套 DDIC 类型层（域/数据元素/结构/表/锁对象/编号范围）、一个消息类 65+ 条消息，再加上 20 多万字的设计书、进度台账、上线清单、验收基准文档。
+
+![zom_org 分层架构：RFC 接口层 / 应用服务层 / 规则层 / 数据访问层，直到 SAP 内核调用](https://img.jack-liang.com/sap-for-agents-abap-dev-in-days/zom-org-architecture.png)
+
+![SE80 里的 ZOM_ORG 包：约 30 个类、6 个接口、函数组与消息类](https://img.jack-liang.com/sap-for-agents-abap-dev-in-days/zom-org-se80-package.png)
+
+按传统开发方式估，这是<Notation type="highlight" color="#fef08a">几十个人天的活。实际用了几天</Notation>。
+
+写代码的主力不是我，是 AI Agent。我几乎没打开过 SE80——Agent 通过一个网关直接在 SAP 系统里搜元数据、写代码、激活、跑测试、查 dump、修 bug，全程自服务。
+
+这个网关就是我之前开源的 **sap-for-agents**（https://github.com/Jack-Liang/sap-for-agents），之前写过一篇《给 SAP 开一扇 HTTP 小门》介绍它的调用能力。这几个月它进化出了一个新形态：<Notation type="underline" color="#ef4444">不只是"让 AI 能调 SAP"，而是"让 AI 能开发 SAP"</Notation>。这篇讲讲它是怎么做到的，以及那个几天做完的项目背后，开发-验证闭环是怎么转起来的。
+
+# 为什么 AI 之前开发不了 ABAP
+
+让 AI 调用 SAP 和让 AI 开发 SAP，是两个难度量级的事。
+
+调用只需要解决"怎么调"——协议绑定、参数编组，一个 HTTP 端点就够了。但开发要解决的是一整条链路：
+
+1. **探索**：这个系统里有什么？函数、表、结构的定义是什么？（AI 没有你的系统记忆）
+2. **写入**：代码怎么进 SAP？SE80 是个 GUI，AI 点不了
+3. **激活与校验**：语法对不对？激活有没有报错？
+4. **验证**：跑一下，行为对吗？
+5. **排错**：报错了，dump 在哪？错因是什么？
+
+传统上，这条链上的每一环都把人钉在 SAP GUI 前面。AI 能帮你写 ABAP 代码片段，但"粘贴进 SE80 → 激活 → 按 F8 测试 → 去 ST22 看 dump"这些动作还得人来干，<Notation type="box" color="#3b82f6">AI 产出的代码和真实系统之间隔着一个人肉搬运工</Notation>——通常就是你自己。
+
+打通这条链需要的不是新发明，而是把 SAP 早已存在的两套底层能力交到 AI 手上。
+
+# 两把钥匙：RFC 和 ADT
+
+SAP 系统对外其实一直有两套程序化入口，网关做的事就是把它们同时包装成 HTTP API：
+
+**RFC 通道**——走 NWRFC SDK，负责"运行态"的事：
+
+- 调任意函数/BAPI（`/api/rfc`）
+- 元数据自发现：搜函数、查接口签名、读函数文档、查 DDIC 结构、读透明表数据
+- 读函数和程序的 ABAP 源码
+- 临时跑一段 ABAP 探针代码（`RFC_ABAP_INSTALL_AND_RUN`）——那些在 SAP 会话内才调得到的 `RH_*` / `RS_*` 函数，也能借此触达
+
+**ADT 通道**——走 `/sap/bc/adt/**` REST 接口（就是 Eclipse ADT 用的那套），负责"开发态"的事：
+
+- 读/写 ABAP 对象源码（类、接口、函数、程序、include、CDS、表结构……）
+- 完整的写入编排：<Notation type="highlight" color="#86efac">加锁 → 写入 → 语法检查 → 解锁 → 激活</Notation>，一次 API 调用完成
+- 查 ST22 短转储：列表、按错误类型聚合、解析出终止点和调用栈
+
+ADT 通道有个细节值得一提：写操作需要 CSRF token 和 stateful 会话，网关把这些全托管了——调用方只发一个 `PUT`，背后是网关维护的会话在跟 SAP 拉扯。
+
+两套通道合体，AI 手里的 SAP 就不再是个黑盒：<Notation type="circle" color="#10b981">系统里有什么（元数据 API）、代码怎么写进去（ADT 写入）、跑得对不对（RFC 调用 + ABAP Unit）、错了为什么（ST22 结构化解析），每一环都有端点</Notation>。我把这套使用说明写进了网关自带的 `AGENTS.md`（访问 `/agents.md` 就能拿到），Agent 开局读一遍，就知道这套系统该怎么自服务。
+
+![网关 Web 首页：粘贴给 AI 的 agents.md 链接、连通性测试与端点列表](https://img.jack-liang.com/sap-for-agents-abap-dev-in-days/gateway-home.png)
+
+# 闭环转起来是什么样
+
+抽象说完，看实战。zom_org 开发中一个典型的迭代循环长这样：
+
+**第一步：探索。** 我要做一个"按值域/检查表/转换例程自动解析字段枚举值"的码值层。Agent 先自己查 DDIC：`T777V` 这种文本表的首键是语言列吗？`DD_DOMVALUES_GET` 返回的文本字段缺省是什么？这些问题它直接调网关的 DDIC 端点和查表端点拿真实数据回答，不猜。
+
+**第二步：写入。** 代码本地成型后，经网关 ADT 通道写进开发机：ETag 乐观锁防覆盖、写入后回读比对、语法检查不过就不激活。改一小段还有"唯一匹配查找替换"端点，不用整文件重写。
+
+**第三步：验证。** 激活后立刻调 RFC 跑真实用例——zom_org 的写入口 `Z_OM_ORG_SUBMIT` 支持 `IV_MODE='C'` 试算不落库，Agent 可以反复试算比对 diff，确认逻辑对了再落库。ABAP Unit 测试类也走同一条链路执行。
+
+**第四步：排错。** 出错了不用人去 ST22 翻：Agent 调 `/api/dumps` 拿到结构化 dump——错误类型、终止程序、调用栈，直接定位。前几天一次真实记录：一轮迭代里 Agent 复核出 9 处语法错加 4 个行为根因（比如 `CONDENSE` 对定长 CHAR 压不掉尾随空格导致判断恒假），逐个修复后探针 14/14 全绿，1267 节点的大树读取全量解析通过。
+
+注意这个循环里人的角色：<Notation type="highlight" color="#fbbf24">我负责提需求、审设计、验收结果；循环内部的每一步都是 Agent 自己转的</Notation>。这才是效率的来源——不是"AI 打字比我快"，而是**验证的往返成本被打掉了**。传统开发里"改一行 → 激活 → 按 F8 → 看结果"要一分钟，人一天只能转几百圈；Agent 转一圈只要几秒钟，还不出错。
+
+循环跑完还有最后一道对账：代码经 abapGit 回流到 git 仓库，本地与 SAP 侧逐行比对——9280 行代码、133 个对象，零漂移。
+
+![abapGit 统计：本地与远端（SAP 侧）逐行一致，9280 行代码、133 个对象](https://img.jack-liang.com/sap-for-agents-abap-dev-in-days/zom-org-abapgit-stats.png)
+
+# 真实踩出来的坑，也流回了工具
+
+几天高强度实战，等于对网关做了一轮极限压测。它现在的几个硬能力，都是这个项目逼出来的：
+
+- **激活后行为没变？** 网关的 RFC 连接池复用有状态会话，旧版本类会驻留——表现为"写入成功、激活成功，但就是跑旧代码"。于是有了连接池代次机制和运行期 reload，换代不重进程
+- **改了 RFC 签名要重启网关？** 实测发现 SAP SDK 的函数描述符缓存是按 SYSID 进程级持有的（跟连接无关），于是接入了 SDK 的按名移除缓存接口，签名变更立即生效，不再重启
+- **`RFC_READ_TABLE` 在目标系统上不可用？** 那就用网关自己的能力反向开发一个——zom_org 里的 `Z_OM_ORG_QUERY` 通用查表函数就是这么来的，支持字段子集、WHERE 条件、翻页，比标准函数好用
+
+这就是我说的闭环的另一层含义：<Notation type="box" color="#8b5cf6">工具开发应用，应用反过来捶打工具</Notation>。网关 v0.18 的 215 个测试，相当一部分场景来自这个项目的真实踩坑。
+
+# 边界在哪里
+
+诚实交代几条红线，想复用这套玩法的话要注意：
+
+- **只直连开发机**。Agent 写代码的能力以所配账号的完整权限开放，生产系统请走传输——这也是 zom_org 的包设计（`ZOM_ORG_TEST` 测试层不随生产传输）和上线清单存在的原因
+- **网关支持多系统和逐系统只读**：生产系统配 `read_only = true`，Agent 只能查不能写
+- 暴露在非本机网络时务必开 `SAP_API_KEY` 鉴权，最好再加按 IP 限流
+- AI 写的 ABAP 依然是 ABAP——设计评审、传输纪律、消息号治理这些工程约束，不会因为写手变了就消失。我的做法是把它们写进项目文档和 `AGENTS.md`，让 Agent 也被同一套规则约束
+
+# 最后
+
+SAP 圈子里有个老笑话："SAP 什么都能做，但什么都不好做。" 做完这个项目我对它有新的理解：不好做的原因很大程度上是**人被当成了系统集成总线**——在 GUI、文档、测试、dump 之间来回搬运信息。一旦这条总线换成 API，让 AI 直接挂上去，几十人天的活压缩到几天，并不是魔法，只是消除了搬运。
+
+sap-for-agents 的仓库我放在 GitHub 上：
+
+- 网关：https://github.com/Jack-Liang/sap-for-agents （Rust，MIT，预编译二进制下载即用）
+
+如果你也在折腾 SAP + AI，欢迎来聊聊。
