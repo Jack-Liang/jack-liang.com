@@ -11,7 +11,7 @@ tags:
   - 技术债
   - 可维护性
   - 兔子
-isFeatured: true
+isFeatured: false
 seo:
   title: 配置表泛滥怎么治理 | 开发第一性原理 09
   description: 配置表不是建完就完，是要被找到的。命名空间 + 配置表目录（Registry）+ 生命周期 + 优先用标准 Customizing。
