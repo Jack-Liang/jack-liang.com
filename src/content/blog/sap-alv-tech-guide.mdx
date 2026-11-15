@@ -1,0 +1,495 @@
+---
+title: 'SAP ALV 技术全览：七种实现方式、可运行 Demo 与选型建议'
+excerpt: ALV 开发到底有几种写法？REUSE 函数、OO ALV、SALV 三代技术一次讲清：七种方式逐一对比用法，附一个七种全包的 Demo 程序（已开源，abapGit 一键拉取），以及实测踩过的几个坑——CL_SALV_HIERARCHICAL_TABLE 的版本门槛、块式 ALV 的动态 ASSIGN 陷阱，最后给出选型建议。
+publishDate: 'Nov 15 2026'
+tags:
+  - SAP
+  - ABAP
+  - ALV
+  - 开源项目
+featureImage:
+  src: 'https://img.jack-liang.com/00-headImage/pexels_37931570_large2x.jpg'
+  alt: SAP ALV 技术全览
+seo:
+  image:
+    src: 'https://img.jack-liang.com/00-headImage/pexels_37931570_large2x.jpg'
+---
+
+import Notation from '../../components/Notation.astro';
+
+写 SAP 报表绕不开 ALV。但"ALV"其实不是一个东西——从最早的 `REUSE_ALV_*` 函数，到 `CL_GUI_ALV_GRID` 控件，再到 SALV 模型，三代技术并存至今，面试和日常开发里经常被问"它们有什么区别、该用哪个"。
+
+最近我把这个问题系统性整理了一遍，并把**七种 ALV 方式写进了同一个 Demo 程序**，选择屏幕上单选切换，数据用各系统都有的 SFLIGHT（层级方式抬头用 SPFLI），开源在 ZABAP_TOOLS 仓库，abapGit 可直接拉进系统：
+
+- Demo 程序：[zr_alv_demo_sflight.prog.abap](https://github.com/Jack-Liang/ZABAP_TOOLS/blob/main/src/alv/zr_alv_demo_sflight.prog.abap)
+- 仓库：[ZABAP_TOOLS](https://github.com/Jack-Liang/ZABAP_TOOLS)
+
+这篇文章是按方式逐个数清楚，文末给选型建议。
+
+ALV（ABAP List Viewer，最早叫 SAP List Viewer）的三代演进：
+
+1. **函数时代**：`REUSE_ALV_*` 系列 Function Module（SLIS 类型组）
+2. **OO 控件时代**：`CL_GUI_ALV_GRID`（基于 Control Framework 的网格控件）
+3. **SALV 时代**：`CL_SALV_TABLE`（面向对象的封装模型，无需 Field Catalog）
+
+> 提示：如果系统里 SFLIGHT / SPFLI 没数据，先跑一次标准程序 `BC_DATA_GENERATOR` 生成演示数据。
+
+## 一、ALV 方式总览
+
+| # | 方式 | 技术载体 | 是否全屏 | 需要 Field Catalog | 需要屏幕/容器 | 交互编辑 | 典型场景 |
+|---|------|----------|----------|--------------------|---------------|----------|----------|
+| 1 | `REUSE_ALV_LIST_DISPLAY` | Function Module | 是 | 可选（可自动合并） | 否 | 否（只读） | 老式清单型报表 |
+| 2 | `REUSE_ALV_GRID_DISPLAY` | Function Module | 是 | 可选 | 否 | 否（只读） | 老式网格报表，最常用 |
+| 3 | `REUSE_ALV_HIERSEQ_LIST_DISPLAY` | Function Module | 是 | 必须手工拼接 | 否 | 否 | 抬头/行项目层级清单 |
+| 4 | `REUSE_ALV_BLOCK_LIST_DISPLAY` | Function Module | 是 | 是 | 否 | 否 | 一页多段清单 |
+| 5 | `CL_GUI_ALV_GRID` | 类（OO ALV） | 取决于容器 | 可选（LVC） | **是**（容器控件） | **支持** | 可编辑报表、嵌入自定义屏幕 |
+| 6 | `CL_SALV_TABLE` | 类（SALV 模型） | 是 | **不需要** | 否 | 否（只读） | 现代只读报表，**首推** |
+| 7 | `CL_SALV_HIERARCHICAL_TABLE` / `CL_SALV_TREE`（NW 7.02+） | 类（SALV 模型） | 是 | 不需要 | 否 | 否 | SALV 版的层级/树形输出 |
+
+补充说明：
+
+- `REUSE_ALV_GRID_DISPLAY_LVC` 是方式 2 的 LVC 变体（LVC 类型池，支持拖拽等），用法与方式 2 基本一致，本文不单独演示。
+- 在 **ABAP Cloud / BTP ABAP Environment** 上，以上所有方式都不可用（没有 SAP GUI），报表走 Fiori Elements / SmartTable + CDS，这是另一个话题。
+- Web Dynpro 里的 `SALV_WD_TABLE` 组件是 SALV 思想的 Web 版，已随 Web Dynpro 一起淡出主流，仅作了解。
+
+## 二、各方式的用法详解
+
+> 以下每个方式末尾的代码片段，均节选自完整 Demo 程序（见第三章），可直接在系统中运行。
+
+### 1. REUSE_ALV_LIST_DISPLAY —— 最早的列表式 ALV
+
+最老的 ALV 入口，输出样式接近传统的 `WRITE` 列表，但自带排序、小计、过滤、导出 Excel 等工具栏。
+
+**关键要点**
+
+- 字段目录（Field Catalog）类型为 `SLIS_T_FIELDCAT_ALV`，可以：
+  - 手工逐字段填充；或
+  - 用 `REUSE_ALV_FIELDCATALOG_MERGE` 从 DDIC 结构（如 SFLIGHT）自动生成；或
+  - 直接传 `I_STRUCTURE_NAME = 'SFLIGHT'` 让它自己找结构。
+- 布局结构 `SLIS_LAYOUT_ALV`：常用 `ZEBRA`（条纹）、`COLWIDTH_OPTIMIZE`（列宽自适应）、`EDIT`（可编辑，基本没人用）。
+- 事件通过 `IT_EVENTS`（`SLIS_T_EVENT`）注册，如 `TOP_OF_PAGE`、`USER_COMMAND`、`PF_STATUS_SET`。
+- 变式保存由 `I_SAVE = 'A'`（标准+用户变式）/ `'X'`（仅标准）/ `'U'`（仅用户）控制。
+
+**核心代码片段**
+
+```abap
+FORM display_list_alv.
+  DATA: lt_fcat   TYPE slis_t_fieldcat_alv,
+        ls_layout TYPE slis_layout_alv.
+
+  " 从 DDIC 结构 SFLIGHT 自动生成字段目录
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+    EXPORTING
+      i_structure_name = 'SFLIGHT'
+    CHANGING
+      ct_fieldcat      = lt_fcat
+    EXCEPTIONS
+      OTHERS           = 1.
+
+  ls_layout-zebra             = abap_true.   " 条纹
+  ls_layout-colwidth_optimize = abap_true.   " 列宽自适应
+
+  CALL FUNCTION 'REUSE_ALV_LIST_DISPLAY'
+    EXPORTING
+      i_structure_name = 'SFLIGHT'
+      is_layout        = ls_layout
+      it_fieldcat      = lt_fcat
+      i_save           = 'A'        " 允许保存布局变式（标准+用户）
+    TABLES
+      t_outtab         = gt_sflight
+    EXCEPTIONS
+      OTHERS           = 1.
+ENDFORM.
+```
+
+**优缺点**：依赖少、单 FM 调用即可出报表；但界面老旧、不支持真正的事件驱动，新开发一般不选它。
+
+### 2. REUSE_ALV_GRID_DISPLAY —— 函数版的网格 ALV
+
+接口与方式 1 几乎一样，只是输出换成了 Grid 控件（底层就是 `CL_GUI_ALV_GRID` 的封装），外观现代一些，支持冻结列、前端拖拽排序等。
+
+**关键要点**
+
+- 参数结构与 LIST 版相同（SLIS 类型组），从 LIST 迁移到 GRID 往往只需改 FM 名字。
+- `IT_SORT`（`SLIS_T_SORTINFO_ALV`）预设排序/小计；`IT_FILTER` 预设过滤。
+- `I_CALLBACK_PF_STATUS_SET` / `I_CALLBACK_USER_COMMAND` 用回调 FORM 名字接管工具栏和按钮事件。
+
+**核心代码片段**
+
+```abap
+FORM display_grid_alv.
+  DATA: lt_fcat   TYPE slis_t_fieldcat_alv,
+        ls_layout TYPE slis_layout_alv,
+        lt_sort   TYPE slis_t_sortinfo_alv.
+
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+    EXPORTING
+      i_structure_name = 'SFLIGHT'
+    CHANGING
+      ct_fieldcat      = lt_fcat
+    EXCEPTIONS
+      OTHERS           = 1.
+
+  ls_layout-zebra             = abap_true.
+  ls_layout-colwidth_optimize = abap_true.
+
+  " 预设排序：航线 + 航班号
+  lt_sort = VALUE slis_t_sortinfo_alv(
+    ( spos = 1 fieldname = 'CARRID' up = abap_true )
+    ( spos = 2 fieldname = 'CONNID' up = abap_true ) ).
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_structure_name = 'SFLIGHT'
+      is_layout        = ls_layout
+      it_fieldcat      = lt_fcat
+      it_sort          = lt_sort
+      i_default        = abap_true
+      i_save           = 'A'
+    TABLES
+      t_outtab         = gt_sflight
+    EXCEPTIONS
+      OTHERS           = 1.
+ENDFORM.
+```
+
+**优缺点**：调用极简、全屏直出；与 LIST 版一样，事件模型是"回调 FORM 名"这种弱类型方式，复杂交互力不从心。适合快速出的只读报表。
+
+### 3. REUSE_ALV_HIERSEQ_LIST_DISPLAY —— 抬头/行项目层级清单
+
+一个调用同时展示两张内表（如抬头 VBAK + 行项目 VBAP），通过 `IS_KEY_INFO`（`SLIS_KEYINFO_ALV`）把两张表用关键字段关联，展开节点看明细。
+
+**关键要点**
+
+- 两张内表的字段目录要**手工拼进同一个 `SLIS_T_FIELDCAT_ALV`**，用 `TABNAME` 区分属于哪张表。
+- **`I_TABNAME_HEADER` / `I_TABNAME_ITEM` 必须填真实存在的全局内表名**：FM 展示时会按这个名字动态 `ASSIGN (name)` 找数据表，填 FORM 局部变量的名字会在运行时炸 `CALL_FUNCTION_PARM_MISSING`。
+- 展开层级由 `IS_LAYOUT-EXPAND_ALL`、事件 `ITEM_DATA_EXPAND` 控制。
+- 层级清单天然需要两张表。Demo 程序（选项 `r_hier`）抬头用航班计划表 SPFLI、行项目用 SFLIGHT，按 航线+航班号（CARRID+CONNID）关联——两张表都由 `BC_DATA_GENERATOR` 生成；真实场景（如 VBAK/VBAP）换成业务表即可。同类需求更推荐 SALV 的 `CL_SALV_HIERARCHICAL_TABLE`（见方式 7）。
+
+<Notation type="highlight" color="#fef08a">这个"必须全局表名"的坑我在 Demo 调试时实打实踩过一次：静态检查完全正常，一运行就 CALL_FUNCTION_PARM_MISSING，因为这是个动态调用异常，激活阶段根本发现不了。</Notation>
+
+**调用骨架**
+
+```abap
+CALL FUNCTION 'REUSE_ALV_HIERSEQ_LIST_DISPLAY'
+  EXPORTING
+    i_callback_program = sy-repid
+    is_layout          = ls_layout
+    it_fieldcat        = lt_fcat        " 两表字段目录拼在一起，TABNAME 区分
+    is_keyinfo         = ls_keyinfo     " 抬头表与行项目表的关联键
+    i_tabname_header   = 'GT_HEADER'
+    i_tabname_item     = 'GT_ITEM'
+  TABLES
+    t_outtab_header    = gt_header
+    t_outtab_item      = gt_item
+  EXCEPTIONS
+    OTHERS             = 1.
+```
+
+### 4. REUSE_ALV_BLOCK_LIST_DISPLAY —— 块式多段清单
+
+通过 `REUSE_ALV_BLOCK_LIST_INIT` / `_APPEND` / `_DISPLAY` 一组 FM，把多段不同结构的清单拼在同一屏，段与段之间用横条分隔。属于小众用法，只读、不能编辑，仅在"一页看多张表"的老式报表中偶见。Demo 程序（选项 `r_block`）把 SFLIGHT 前 50 行 / 后 50 行拆成两块演示。
+
+**关键要点**
+
+- `APPEND` 的 `I_TABNAME` 与字段目录的 `TABNAME` 必须一致，且必须是**真实存在的全局内表名**——`DISPLAY` 时 FM 按名字动态 `ASSIGN` 找表，局部变量名会导致运行时 `CALL_FUNCTION_PARM_MISSING` dump（与方式 3 同一颗雷）。
+- 各块结构可以不同（每块自己的字段目录），Demo 里两块同为 SFLIGHT 仅作演示。
+- 建议对照 SAP 标准演示程序 `BALVBT01` 的调用序列：先 `REUSE_ALV_EVENTS_GET` 取标准事件表传给每次 `APPEND` 的 `IT_EVENTS`，再 `INIT → APPEND × N → DISPLAY`。
+
+**调用骨架**
+
+```abap
+CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_INIT'
+  EXPORTING
+    i_callback_program = sy-repid.
+
+CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_APPEND'
+  EXPORTING
+    is_layout   = ls_layout
+    it_fieldcat = lt_fcat
+    i_tabname   = 'GT_DATA'
+    it_events   = lt_events      " 来自 REUSE_ALV_EVENTS_GET
+  TABLES
+    t_outtab    = gt_data.
+
+CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_DISPLAY'
+  EXCEPTIONS
+    program_error = 1
+    OTHERS        = 2.
+```
+
+### 5. CL_GUI_ALV_GRID —— OO ALV，可编辑的唯一主流方案
+
+真正的 SAP GUI 控件，必须依附于一个**容器**（Custom Container / Docking Container / Splitter），因此必须搭配一个屏幕（Dynpro）使用。
+
+**关键要点**
+
+- 常用容器：
+  - `CL_GUI_CUSTOM_CONTAINER`：在屏幕画板上画一块区域（控件名传给 `CONTAINER_NAME`），布局可控；
+  - `CL_GUI_DOCKING_CONTAINER`：代码里动态创建，靠 `EXTENSION` 撑满屏幕，**不需要画控件**，Demo 里用它，最省事。
+- 字段目录类型换成 LVC 类型池的 `LVC_T_FCAT`：只传 `I_STRUCTURE_NAME` 时会自动生成（Demo 的做法）；需要自定义时可由 `LVC_FIELDCATALOG_MERGE_GET` 生成（注意：部分系统没有此 FM，替代方案是 `REUSE_ALV_FIELDCATALOG_MERGE` 生成 SLIS 目录后用 `LVC_TRANSFER_FROM_SLIS` 转换）。
+- 布局 `LVC_S_LAYO`：`ZEBRA`、`CWIDTH_OPT`、`SEL_MODE`（行选择模式 A/B/C/D/空格）、`EDIT` 等。
+- 核心方法：
+  - `SET_TABLE_FOR_FIRST_DISPLAY`（首次展示，传结构名+布局+字段目录+内表；注意 `IT_FIELDCATALOG` 是 **CHANGING** 参数）
+  - `REFRESH_TABLE_DISPLAY`（数据变化后刷新）
+  - `CHECK_CHANGED_DATA`（编辑报表把前端改动拉回内表）
+  - `GET_SELECTED_ROWS`（取选中行）
+- 事件驱动：注册 `HANDLE_DATA_CHANGED`、`HANDLE_TOOLBAR`、`HANDLE_USER_COMMAND`、`HANDLE_DOUBLE_CLICK` 等事件处理器，这是它和 FM 方式最本质的区别——**真正的面向对象事件模型**。
+- 是唯一被广泛使用且 SAP 官方支持**单元格级编辑**的方案（EDIT 字段目录 + `MC_STYLE_ENABLED` 等）。
+
+**核心代码片段（创建容器 + 首次展示）**
+
+```abap
+FORM display_oo_alv.
+  DATA ls_layout TYPE lvc_s_layo.
+
+  IF go_docking IS INITIAL.
+    " Docking 容器：extension 足够大即铺满整屏
+    CREATE OBJECT go_docking
+      EXPORTING
+        repid     = sy-repid
+        dynnr     = '0100'
+        side      = cl_gui_docking_container=>dock_at_left
+        extension = 3000.
+
+    CREATE OBJECT go_grid
+      EXPORTING
+        i_parent = go_docking.
+  ENDIF.
+
+  ls_layout-zebra      = abap_true.
+  ls_layout-cwidth_opt = abap_true.
+  ls_layout-sel_mode   = 'A'.        " 允许多行选择
+
+  " 不传字段目录：I_STRUCTURE_NAME 会让网格自动从 DDIC 结构生成
+  " （如需自定义目录，可用 LVC_FIELDCATALOG_MERGE_GET——部分系统没有此 FM，
+  "  替代方案：REUSE_ALV_FIELDCATALOG_MERGE + LVC_TRANSFER_FROM_SLIS 转换）
+  go_grid->set_table_for_first_display(
+    EXPORTING
+      i_structure_name = 'SFLIGHT'
+      is_layout        = ls_layout
+    CHANGING
+      it_outtab        = gt_sflight
+    EXCEPTIONS
+      OTHERS           = 1 ).
+ENDFORM.
+```
+
+**配套的屏幕 PBO / PAI 片段**
+
+```abap
+MODULE status_0100 OUTPUT.
+  SET PF-STATUS 'STATUS_0100'.    " 需自建，至少含 BACK/EXIT/CANC
+  SET TITLEBAR  'TITLE_0100'.
+  IF go_docking IS INITIAL.
+    PERFORM display_oo_alv.
+  ENDIF.
+ENDMODULE.
+
+MODULE user_command_0100 INPUT.
+  " 功能码取决于 SE41 里 STATUS_0100 的定义方式：
+  " 直接给按钮分配标准功能键（F3/F15/F12）时，功能码是 &F03/&F15/&F12；
+  " 自定义按钮命名常用 BACK/EXIT/CANC。两种都兼容。
+  CASE sy-ucomm.
+    WHEN '&F03' OR '&F15' OR '&F12'
+      OR 'BACK' OR 'EXIT' OR 'CANC'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.
+```
+
+**优缺点**：能力天花板最高（编辑、嵌入、事件、拖拽），但开发量最大——要建屏幕、建容器、写 PBO/PAI。
+
+### 6. CL_SALV_TABLE —— SALV 模型，现代只读报表首选
+
+SALV（New ALV Object Model）是 SAP 在 7.0 之后给出的统一封装：**一个工厂方法出全屏 ALV，不需要 Field Catalog，不需要屏幕**，所有设置通过子对象（列、排序、合计、功能条、显示设置）链式完成。
+
+**关键要点**
+
+- 入口：`CL_SALV_TABLE=>FACTORY( IMPORTING r_salv_table = ... CHANGING t_table = itab )`，内表行结构直接决定列。
+- 常用子对象：
+  - `GET_COLUMNS( )->SET_OPTIMIZE( )` 列宽优化；单列着色需先把 `GET_COLUMN( )` 的返回转型为 `CL_SALV_COLUMN_TABLE` 再调 `SET_COLOR( )`；`SET_VISIBLE( )` 隐藏列
+  - `GET_SORTS( )->ADD_SORT( )` 预设排序
+  - `GET_AGGREGATIONS( )->ADD_AGGREGATION( )` 合计
+  - `GET_FUNCTIONS( )->SET_ALL( )` 打开全部标准工具栏
+  - `GET_DISPLAY_SETTINGS( )->SET_STRIPED_PATTERN( )` / `SET_LIST_HEADER( )`
+  - `GET_LAYOUT( )->SET_KEY( )` + `SET_SAVE_RESTRICTION( )` 支持布局变式保存
+  - `GET_SELECTIONS( )->SET_SELECTION_MODE( )` 行选择；`GET_EVENT( )` 注册 `DOUBLE_CLICK`、`LINK_CLICK`、`USER_COMMAND` 等事件
+- 兄弟类：`CL_SALV_TREE`（树）、`CL_SALV_HIERARCHICAL_TABLE`（层级，对应方式 3 的现代化身）。**注意：这两个类自 NW 7.02（EhP2）起才提供**，更低版本系统上不存在、静态引用无法激活，此时请退回方式 3（`REUSE_ALV_HIERSEQ_LIST_DISPLAY`）。`CL_SALV_HIERARCHICAL_TABLE` 核心就是工厂 + 关联键：
+
+```abap
+cl_salv_hierarchical_table=>factory(
+  IMPORTING
+    r_hierarchical_table = DATA(lo_hier)
+  EXPORTING
+    t_header_level_table = lt_spfli     " 抬头表：航班计划 SPFLI
+    t_items_level_table  = gt_sflight )." 行项目表：航班班次 SFLIGHT
+
+lo_hier->add_hierarchy_relationship(
+  EXPORTING
+    r_header      = lo_hier->get_header_level( )
+    r_items       = lo_hier->get_items_level( )
+    header_column = 'CARRID'
+    items_column  = 'CARRID' ).        " 多键对可多次调用追加（CONNID 同理）
+
+lo_hier->display( ).
+```
+
+**核心代码片段**
+
+```abap
+FORM display_salv.
+  TRY.
+      " 工厂方法直接出全屏 ALV，无需字段目录、无需屏幕
+      cl_salv_table=>factory(
+        IMPORTING
+          r_salv_table = DATA(lo_salv)
+        CHANGING
+          t_table      = gt_sflight ).
+
+      lo_salv->get_columns( )->set_optimize( abap_true ).                  " 列宽优化
+      lo_salv->get_display_settings( )->set_striped_pattern( abap_true ).  " 条纹
+      lo_salv->get_display_settings( )->set_list_header( 'SALV：航班清单' ).
+      lo_salv->get_functions( )->set_all( abap_true ).                     " 全部工具栏
+
+      lo_salv->get_sorts( )->add_sort( 'CARRID' ).                         " 预设排序
+      lo_salv->get_aggregations( )->add_aggregation( 'PRICE' ).            " 价格合计
+
+      " 单价列高亮（红色系）
+      " SET_COLOR 是子类 CL_SALV_COLUMN_TABLE 的方法，GET_COLUMN 返回基类引用，需转型
+      CAST cl_salv_column_table(
+        lo_salv->get_columns( )->get_column( 'PRICE' )
+      )->set_color( VALUE lvc_s_colo( col = 6 ) ).
+
+      lo_salv->display( ).
+    CATCH cx_salv_msg cx_salv_not_found
+          cx_salv_existing cx_salv_data_error INTO DATA(lx_salv).
+      MESSAGE lx_salv->get_text( ) TYPE 'I'.
+  ENDTRY.
+ENDFORM.
+```
+
+**优缺点**：代码最短、最"现代 ABAP"风格，无屏幕依赖；**官方只读**（没有单元格编辑能力，民间有改底层 CL_GUI_ALV_GRID 的 hack，不建议上生产）。只要不编辑，它就是首选。
+
+## 三、完整 Demo 程序
+
+完整可运行的 Demo 程序开源在 ZABAP_TOOLS 仓库（abapGit 格式，可直接 pull 进系统）：
+
+**[zr_alv_demo_sflight.prog.abap](https://github.com/Jack-Liang/ZABAP_TOOLS/blob/main/src/alv/zr_alv_demo_sflight.prog.abap)** —— 一个程序体验全部 7 种 ALV，选择屏幕用单选按钮切换，数据取 SFLIGHT 前 100 行；层级类方式的抬头用同样标配的航班计划表 SPFLI、行项目用 SFLIGHT。
+
+程序的骨架（全局数据 + 选择屏幕 + 主流程分发）如下：
+
+```abap
+DATA: gt_sflight TYPE TABLE OF sflight,
+      gt_hier_h  TYPE TABLE OF spfli,      " 层级方式抬头表（须全局）
+      gt_block1  TYPE TABLE OF sflight,    " 块式方式第 1 块（须全局）
+      gt_block2  TYPE TABLE OF sflight,    " 块式方式第 2 块（须全局）
+      go_docking TYPE REF TO cl_gui_docking_container,
+      go_grid    TYPE REF TO cl_gui_alv_grid.
+
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+PARAMETERS: r_list  RADIOBUTTON GROUP g1 DEFAULT 'X', " FM：列表 ALV
+            r_grid  RADIOBUTTON GROUP g1,             " FM：网格 ALV
+            r_hier  RADIOBUTTON GROUP g1,             " FM：层级清单 ALV
+            r_block RADIOBUTTON GROUP g1,             " FM：块式清单 ALV
+            r_oo    RADIOBUTTON GROUP g1,             " OO：CL_GUI_ALV_GRID
+            r_salv  RADIOBUTTON GROUP g1,             " SALV：CL_SALV_TABLE
+            r_shier RADIOBUTTON GROUP g1.             " SALV：层级表
+SELECTION-SCREEN END OF BLOCK b1.
+
+START-OF-SELECTION.
+  SELECT * FROM sflight INTO TABLE @gt_sflight UP TO 100 ROWS.
+  IF gt_sflight IS INITIAL.
+    MESSAGE 'SFLIGHT 没有数据，请先运行 BC_DATA_GENERATOR 生成演示数据' TYPE 'I'.
+    RETURN.
+  ENDIF.
+
+  CASE abap_true.
+    WHEN r_list.
+      PERFORM display_list_alv.      " 方式 1
+    WHEN r_grid.
+      PERFORM display_grid_alv.      " 方式 2
+    WHEN r_hier.
+      PERFORM display_hierseq_alv.   " 方式 3
+    WHEN r_block.
+      PERFORM display_block_alv.     " 方式 4
+    WHEN r_oo.
+      " 方式 5：优先走自建屏幕 100（正规 OO ALV 用法）；
+      " 屏幕不存在时退化为 screen0 兜底，避免 DYNPRO_NOT_FOUND dump
+      SELECT SINGLE prog FROM d020s INTO @DATA(lv_prog)
+        WHERE prog = @sy-repid
+          AND dnum = '0100'.
+      IF sy-subrc = 0.
+        CALL SCREEN 100.
+      ELSE.
+        PERFORM display_oo_alv_screen0.
+      ENDIF.
+    WHEN r_salv.
+      PERFORM display_salv.          " 方式 6
+    WHEN r_shier.
+      " 方式 7：CL_SALV_HIERARCHICAL_TABLE 自 NW 7.02 起提供，
+      " 低版本系统上类不存在（静态引用无法激活），此处仅提示
+      MESSAGE 'CL_SALV_HIERARCHICAL_TABLE 需 NW 7.02+，当前系统不可用，请改用方式 3' TYPE 'I'.
+  ENDCASE.
+```
+
+方式 1 / 2 / 5 / 6 的实现 FORM 已在上文第二章逐节给出；方式 3 / 4 的完整 FORM（`display_hierseq_alv` / `display_block_alv`）见代码文件，逻辑遵循上文对应小节的调用骨架；方式 7 因依赖 NW 7.02+ 的 `CL_SALV_HIERARCHICAL_TABLE`，程序中不做静态引用，写法见上文方式 6 小节的片段。
+
+### 手工配套对象（可选，仅 OO ALV 的"正规用法"需要）
+
+> **不建这些对象程序也能跑**：`r_oo` 分支会先查 `D020S` 判断屏幕 100 是否存在，不存在就以 `cl_gui_container=>screen0`（当前屏幕）为父容器兜底展示，网格直接铺满选择屏，按 F3 返回即退出程序。建了下面这套对象，才是教科书式的 OO ALV 体验（独立屏幕 + Docking 容器 + 自定义状态栏）。
+
+1. **屏幕 100**：SE51 创建，流逻辑保持两行即可：
+
+   ```
+   PROCESS BEFORE OUTPUT.
+     MODULE status_0100.
+
+   PROCESS AFTER INPUT.
+     MODULE user_command_0100.
+   ```
+
+   因为容器是代码里 new 出来的 Docking Container，**画板上不需要放任何控件**。
+
+2. **GUI 状态 STATUS_0100**：SE41 自建。功能码两种做法都兼容：自定义命名 `BACK` / `EXIT` / `CANC`，或直接把按钮分配给标准功能键 F3 / F15 / F12（此时功能码是 `&F03` / `&F15` / `&F12`）——PAI 模块已同时覆盖两种。
+
+3. **标题 TITLE_0100**：随便起个名，比如 "OO ALV Demo"。
+
+4. **TEXT-001**：文本符号，内容为"选择 ALV 展示方式"。
+
+建好对象后激活程序，按 F8 执行，勾选哪个单选按钮就体验哪种 ALV。
+
+## 四、选型建议
+
+### 4.1 对比一览
+
+| 维度 | REUSE_ALV_LIST | REUSE_ALV_GRID | CL_GUI_ALV_GRID | CL_SALV_TABLE |
+|------|----------------|----------------|-----------------|---------------|
+| 代码量 | 极小 | 极小 | **大**（屏幕+容器+事件） | **最小** |
+| 学习/维护成本 | 低 | 低 | 高 | 低 |
+| 界面观感 | 老旧（列表风） | 现代（网格） | 现代 | 现代 |
+| 单元格编辑 | 否 | 否 | **是（官方支持）** | 否（官方只读） |
+| 嵌入自定义屏幕 | 否 | 否 | **是** | 需要自建容器，不推荐 |
+| 事件模型 | 回调 FORM 名 | 回调 FORM 名 | **OO 事件，最强** | OO 事件（有限集合） |
+| Field Catalog | 需要（可自动合并） | 需要（可自动合并） | 需要（LVC，可自动合并） | **不需要** |
+| 额外 Dynpro | 不需要 | 不需要 | **必须** | 不需要 |
+| 变式保存 | 支持 | 支持 | 支持 | 支持 |
+| 技术趋势 | 遗留维护 | 遗留维护 | 存量巨大，仍活跃 | SAP 官方推荐方向 |
+
+### 4.2 怎么选
+
+- **要编辑（单元格改数、下拉框、复选框、校验回写）→ CL_GUI_ALV_GRID，没有之一。** 这是唯一官方支持交互编辑的方案，也是唯一能嵌进你自己屏幕做复杂界面的方案。财务对账平台、批量维护类报表都走这条路。
+- **只读的新报表 → CL_SALV_TABLE。** 代码最短、没有 Field Catalog、没有屏幕依赖，风格也最接近现代 ABAP（链式子对象）。除非有明确理由，新项目一律用它。需要层级就用 `CL_SALV_HIERARCHICAL_TABLE`，需要树就用 `CL_SALV_TREE`。
+- **维护老代码 / 十分钟赶一个查询报表 → REUSE_ALV_GRID_DISPLAY。** 存量系统里到处是它的变体和自封装，改起来顺手；但新开发不建议再开这个头。`REUSE_ALV_LIST_DISPLAY` 基本只出现在历史代码里，知道它存在即可。
+- **REUSE_ALV_HIERSEQ_LIST_DISPLAY / BLOCK_LIST_DISPLAY**：只有接手老程序时会碰到，新需求直接用 SALV 的层级类替代。
+
+<Notation type="underline">一句话推荐：新开发默认 CL_SALV_TABLE；一旦需求里出现"可编辑"三个字，直接切 CL_GUI_ALV_GRID。</Notation>
+
+### 4.3 面向未来的一句提醒
+
+以上所有 ALV 都依赖 SAP GUI。如果项目目标是 **ABAP Cloud（含 S/4HANA Cloud Public Edition / BTP ABAP Environment）**，REUSE_*、CL_GUI_*、CL_SALV_* 全部不可用，报表的正确姿势是 **CDS + OData + Fiori Elements（List Report / SmartTable）**。On-Premise 私有云版本（2023 起）虽然还兼容 Classic ABAP，但新建报表也应尽量评估 Fiori 路线，ALV 留给存量维护。
+
+## 相关链接
+
+- Demo 程序：[zr_alv_demo_sflight.prog.abap](https://github.com/Jack-Liang/ZABAP_TOOLS/blob/main/src/alv/zr_alv_demo_sflight.prog.abap)（[ZABAP_TOOLS](https://github.com/Jack-Liang/ZABAP_TOOLS)，abapGit 管理）
+- SAP 标准演示程序：`BALVBT01`（块式）、`BCALV_GRID_DEMO`（OO ALV）、`SALV_DEMO_TABLE_*`（SALV 系列）
