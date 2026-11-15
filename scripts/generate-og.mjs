@@ -365,9 +365,15 @@ function imageCard(post, imageDataUri) {
 async function loadCoverDataUri(url) {
     if (!url) return null;
     try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const buf = Buffer.from(await res.arrayBuffer());
+        let buf;
+        if (/^https?:\/\//.test(url)) {
+            const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            buf = Buffer.from(await res.arrayBuffer());
+        } else {
+            // 内容集合相对路径（如 ../../assets/images/<slug>/cover.jpg）：直接读本地文件
+            buf = readFileSync(path.resolve(blogDir, decodeURIComponent(url)));
+        }
         if (buf.length > 20 * 1024 * 1024) throw new Error(`图片过大: ${buf.length} bytes`);
         const sharp = await loadSharp();
         const cover = await sharp(buf).resize(832, 832, { fit: 'cover', position: 'attention' }).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
