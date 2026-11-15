@@ -44,6 +44,7 @@ const randomPostUrls = allPosts.map((post) => `/blog/${post.id}/`);
             pageCount={page.lastPage}
             prevUrl={page.url.prev}
             nextUrl={page.url.next}
+            baseUrl="/blog/"
             randomPostUrls={randomPostUrls}
         />
     </main>

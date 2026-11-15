@@ -111,7 +111,7 @@ const siteConfig: SiteConfig = {
         // Cloudflare Web Analytics：后台开启站点分析后把 token 填到这里，留空则不注入统计脚本
         cloudflareWebAnalyticsToken: ''
     },
-    postsPerPage: 5
+    postsPerPage: 10
 };
 
 export default siteConfig;

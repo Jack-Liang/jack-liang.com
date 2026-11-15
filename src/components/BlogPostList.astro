@@ -12,15 +12,39 @@ interface Props {
     pageCount: number;
     prevUrl?: string | null;
     nextUrl?: string | null;
+    /** 分页链接前缀（含结尾斜杠）：第 1 页 = baseUrl，第 N 页 = `${baseUrl}N/` */
+    baseUrl: string;
     randomPostUrls: string[];
 }
 
-const { posts, tags, activeTag = null, currentPage, pageCount, prevUrl = null, nextUrl = null, randomPostUrls } = Astro.props;
+const { posts, tags, activeTag = null, currentPage, pageCount, prevUrl = null, nextUrl = null, baseUrl, randomPostUrls } = Astro.props;
 
 const pillBase = 'px-3 py-1.5 text-sm font-medium rounded-full transition-colors';
 const pillIdle =
     'bg-white border border-slate-200 text-slate-600 hover:bg-primary hover:border-primary hover:text-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#38b2c8] dark:hover:border-[#38b2c8] dark:hover:text-white';
 const pillActive = 'bg-primary text-white hover:shadow-button';
+
+// 页码折叠：页数少时全部展示，多时始终保留首尾页、以当前页为中心向两侧各留一页
+function pageItems(current: number, count: number): (number | 'ellipsis')[] {
+    if (count <= 7) {
+        return Array.from({ length: count }, (_, i) => i + 1);
+    }
+    const near = new Set<number>([1, count, current - 1, current, current + 1]);
+    if (current <= 4) [2, 3, 4].forEach((p) => near.add(p));
+    if (current >= count - 3) [count - 1, count - 2, count - 3].forEach((p) => near.add(p));
+    const sorted = [...near].filter((p) => p >= 1 && p <= count).sort((a, b) => a - b);
+    const items: (number | 'ellipsis')[] = [];
+    let prev = 0;
+    for (const p of sorted) {
+        if (p - prev > 1) items.push('ellipsis');
+        items.push(p);
+        prev = p;
+    }
+    return items;
+}
+
+const pages = pageItems(currentPage, pageCount);
+const pageUrl = (n: number) => (n === 1 ? baseUrl : `${baseUrl}${n}/`);
 ---
 
 <div class="max-w-3xl mx-auto xl:max-w-6xl">
@@ -69,45 +93,65 @@ const pillActive = 'bg-primary text-white hover:shadow-button';
     </div>
 </div>
 
-<nav aria-label="Pagination" class="max-w-3xl pt-12 mx-auto my-12 border-t border-slate-200 sm:my-16 sm:pt-16">
-    <div class="relative px-12 text-center">
-        {prevUrl ? (
-            <a
-                href={prevUrl}
-                aria-label="上一页"
-                class="absolute left-0 inline-flex items-center justify-center w-10 h-10 text-lg transition duration-300 -translate-y-1/2 rounded-full hover:bg-primary hover:shadow-button top-1/2 bg-white border border-slate-200 text-slate-700 hover:text-white dark:bg-slate-800 dark:border-slate-700"
-            >
-                <Icon icon="arrow-left" class="w-5 h-5 fill-current" />
-            </a>
-        ) : (
-            <span
-                aria-disabled="true"
-                class="absolute left-0 inline-flex items-center justify-center w-10 h-10 text-lg -translate-y-1/2 rounded-full bg-white border border-slate-200 text-slate-300 cursor-not-allowed top-1/2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-600"
-            >
-                <Icon icon="arrow-left" class="w-5 h-5 fill-current" />
-            </span>
-        )}
-        <span class="text-sm tracking-wider uppercase text-slate-500">
-            第 {currentPage} / {pageCount} 页
-        </span>
-        {nextUrl ? (
-            <a
-                href={nextUrl}
-                aria-label="下一页"
-                class="absolute right-0 inline-flex items-center justify-center w-10 h-10 text-lg transition duration-300 -translate-y-1/2 rounded-full hover:bg-primary hover:shadow-button top-1/2 bg-white border border-slate-200 text-slate-700 hover:text-white dark:bg-slate-800 dark:border-slate-700"
-            >
-                <Icon icon="arrow-right" class="w-5 h-5 fill-current" />
-            </a>
-        ) : (
-            <span
-                aria-disabled="true"
-                class="absolute right-0 inline-flex items-center justify-center w-10 h-10 text-lg -translate-y-1/2 rounded-full bg-white border border-slate-200 text-slate-300 cursor-not-allowed top-1/2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-600"
-            >
-                <Icon icon="arrow-right" class="w-5 h-5 fill-current" />
-            </span>
-        )}
-    </div>
-</nav>
+{pageCount > 1 && (
+    <nav aria-label="Pagination" class="max-w-3xl pt-12 mx-auto my-12 border-t border-slate-200 sm:my-16 sm:pt-16">
+        <div class="relative flex flex-wrap items-center justify-center gap-2 px-14">
+            {prevUrl ? (
+                <a
+                    href={prevUrl}
+                    aria-label="上一页"
+                    class="absolute left-0 inline-flex items-center justify-center w-10 h-10 text-lg transition duration-300 -translate-y-1/2 rounded-full hover:bg-primary hover:shadow-button top-1/2 bg-white border border-slate-200 text-slate-700 hover:text-white dark:bg-slate-800 dark:border-slate-700"
+                >
+                    <Icon icon="arrow-left" class="w-5 h-5 fill-current" />
+                </a>
+            ) : (
+                <span
+                    aria-disabled="true"
+                    class="absolute left-0 inline-flex items-center justify-center w-10 h-10 text-lg -translate-y-1/2 rounded-full bg-white border border-slate-200 text-slate-300 cursor-not-allowed top-1/2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-600"
+                >
+                    <Icon icon="arrow-left" class="w-5 h-5 fill-current" />
+                </span>
+            )}
+            <div class="flex flex-wrap items-center justify-center gap-1.5">
+                {pages.map((item) =>
+                    item === 'ellipsis' ? (
+                        <span aria-hidden="true" class="inline-flex h-9 w-6 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
+                            …
+                        </span>
+                    ) : item === currentPage ? (
+                        <span aria-current="page" class={`${pillBase} ${pillActive} inline-flex h-9 min-w-9 items-center justify-center px-2.5`}>
+                            {item}
+                        </span>
+                    ) : (
+                        <a
+                            href={pageUrl(item)}
+                            aria-label={`第 ${item} 页`}
+                            class={`${pillBase} ${pillIdle} inline-flex h-9 min-w-9 items-center justify-center px-2.5`}
+                        >
+                            {item}
+                        </a>
+                    )
+                )}
+            </div>
+            {nextUrl ? (
+                <a
+                    href={nextUrl}
+                    aria-label="下一页"
+                    class="absolute right-0 inline-flex items-center justify-center w-10 h-10 text-lg transition duration-300 -translate-y-1/2 rounded-full hover:bg-primary hover:shadow-button top-1/2 bg-white border border-slate-200 text-slate-700 hover:text-white dark:bg-slate-800 dark:border-slate-700"
+                >
+                    <Icon icon="arrow-right" class="w-5 h-5 fill-current" />
+                </a>
+            ) : (
+                <span
+                    aria-disabled="true"
+                    class="absolute right-0 inline-flex items-center justify-center w-10 h-10 text-lg -translate-y-1/2 rounded-full bg-white border border-slate-200 text-slate-300 cursor-not-allowed top-1/2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-600"
+                >
+                    <Icon icon="arrow-right" class="w-5 h-5 fill-current" />
+                </span>
+            )}
+        </div>
+    </nav>
+)}
 
 <Subscribe class="my-12 sm:my-16" />
 
