@@ -137,26 +137,28 @@ STXL/TDNAME=RHTEXT01:
 
 ## 四、做成通用工具
 
-逆向中攒下的零散脚本，我整理成了一个独立 CLI：[**sap-indx-decoder**](https://github.com/Jack-Liang/sap-indx-decoder)。纯 Python，装个 `hdbcli` 就能连库；也可以完全离线，直接解析导出的二进制文件。
+逆向中攒下的零散脚本，我整理成了一个独立 CLI：[**sap-indx-decoder**](https://github.com/Jack-Liang/sap-indx-decoder)。主体是 Python，LZH 解压带了一个 Rust 原生实现（≈680 MB/s，约 60 倍于纯 Python）——没有原生扩展时自动回退，输出逐字节一致。装个 `hdbcli` 就能连库；也可以完全离线，直接解析导出的二进制文件。
 
 ```bash
-python3 indx_tool.py tables                # 自动发现库里 655 张簇表
-python3 indx_tool.py parse INDX TN QUEUE_ID
-python3 indx_tool.py parse STXL -k MANDT=000 -k RELID=TX \
+git clone https://github.com/Jack-Liang/sap-indx-decoder && cd sap-indx-decoder
+python3 -m sap_indx_decoder tables                # 自动发现库里 655 张簇表
+python3 -m sap_indx_decoder parse INDX TN QUEUE_ID
+python3 -m sap_indx_decoder parse STXL -k MANDT=000 -k RELID=TX \
     -k TDOBJECT=TEXT -k TDNAME=RHTEXT01 -k TDID=ST -k TDSPRAS=D
-python3 indx_tool.py parse-file trpt.bin --json   # 离线模式
-python3 indx_tool.py scan INDX --limit 100        # 批量 + 成功率报告
+python3 -m sap_indx_decoder parse-file trpt.bin --json   # 离线模式
+python3 -m sap_indx_decoder scan INDX --limit 100        # 批量 + 成功率报告
 ```
 
 几个设计点：
 
 - **键结构自动推导**：ABAP 簇表的约定是 `SRTF2` 为最后一个键列，它之前的列（INDX 的 `RELID/SRTFD` 也好，STXL 的 6 列复合键也好）构成簇身份。不看表名，看结构。
 - **缺失键自动消歧**：漏了 MANDT？工具会尝试该列的所有取值，唯一命中就直接用；两个客户端都有同一条数据时明确报歧义，不瞎猜。
+- **DDIC 类型化**：组件名在 ABAP 数据字典（`DD02L`/`DD03L`）里存在时，匿名的"字段[0:2 0:132]"直接变成命名、带类型的列——`TLINE` 就是 `TDFORMAT`/`TDLINE`，INT4 是真整数，PACKED 是真小数。语义不符时按原始字节显示，不瞎猜。
 - **覆盖率为王**：每次解析都会报告"解释了多少字节"，数据有没有损坏，一目了然。
 
 ## 五、局限
 
-- 数值字段（INT4/PACKED）的值还是原始字节，没按类型转成数字——描述符里 type 字节的语义只摸清了一半
+- 描述符里 type 字节的语义（`0=C 1=D 3=T 6=N 8=I`）已经摸清，但字段名和 PACKED 的小数位要靠 DDIC 补——连库时自动生效，纯离线解析没带 DDIC 侧车的话，值还是原始字节（`dump --with-ddic` 可以先导出侧车）
 - LZC（算法字节 `0x10`）没实现，HANA 系统上没见过它，老系统可能会遇到
 - 组件头里的 8 字节哈希没解开，偶尔有可打印字节混进名字显示（纯外观问题）
 
