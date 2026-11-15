@@ -10,11 +10,11 @@ tags:
   - 开源项目
   - Python
 featureImage:
-  src: 'https://img.jack-liang.com/00-headImage/post-2.jpg'
+  src: 'https://img.jack-liang.com/00-headImage/pexels_291732_large2x.jpg'
   alt: 逆向 SAP 数据簇格式
 seo:
   image:
-    src: 'https://img.jack-liang.com/00-headImage/post-2.jpg'
+    src: 'https://img.jack-liang.com/00-headImage/pexels_291732_large2x.jpg'
 ---
 
 写 ABAP 的人迟早会撞上这两张表:`INDX` 和 `STXL`。它们是 SAP 的**数据簇表**——`EXPORT ... TO DATABASE` 把任意 ABAP 变量、结构、内表序列化后存进去,`IMPORT` 时再用 ABAP 读回来。SE16 或 DBeaver 里打开,`CLUSTD` 列就是一大团十六进制。
