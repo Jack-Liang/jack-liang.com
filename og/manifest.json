@@ -66,5 +66,7 @@
     "sap-752-sp04-install": "7bea39d33cfff3417a438bf04e995a55c776795a03990b6c75f44019f8380c17",
     "sap-cross-client-data": "724bdf00f4b234703b438839fc8e2205e2f28bec8cca42dfcc1f69f7eb112d6b",
     "sap-rest-login-language": "8072c858b6ce3896e03adf1ef45af0c976d4cb1c45cd91bed9524e464a701401",
-    "scc-password-reset": "149a2770e22b8dd8d453f525f46324500fecaaafd2fd5831a7392fe906734996"
+    "scc-password-reset": "149a2770e22b8dd8d453f525f46324500fecaaafd2fd5831a7392fe906734996",
+    "sapcli-amdp-cds-hana-pipeline": "f4cdb3fbf66a8f58374c45c99cd4a0c17a9d37090393017bc5059ec2f923ca17",
+    "sapcli-abap-ci-pipeline": "0330b886838979a4e1745579b049c3333979684fd7609394873ac808a04db7f8"
 }

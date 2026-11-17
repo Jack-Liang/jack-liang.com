@@ -414,3 +414,8 @@ AMDP 的斜率是常数（每行约 36 µs），ABAP 是超线性的（指数约
 所以选型的正确问法不是「哪个技术更新」，而是「**我的耗时分布在哪一层，那一层能不能被搬走**」。先把这句话答清楚，再决定用 AMDP、HIERARCHY 还是老老实实写 ABAP 循环。
 
 三个版本、三轮分页重构、两轮传输复测之后，最值钱的产出其实不是那个 76 ms 的数字，而是那张八步流程——它下次能让我少走两天的弯路。
+
+## 相关阅读
+
+- [AMDP 表函数从零到 HANA 直连：SFLIGHT 全链路实录](/blog/sapcli-amdp-cds-hana-pipeline/)——这篇谈「AMDP 该不该用」，那篇谈「AMDP 怎么用」：CDS 表函数封装、client 处理、直连 HANA 的授权暗坑（#covw），一次走通。
+- [用 sapcli 把 SAP 接进 CI：Docker 靶场、代理排障与 JUnit 闭环](/blog/sapcli-abap-ci-pipeline/)——AMDP 对象的创建、激活、回归测试全用命令行完成，不需要打开 SAPGUI。
