@@ -17,7 +17,7 @@ jobs:
                   args: >-
                       --no-progress
                       --max-retries 2
-                      --timeout 20s
+                      --timeout 20
                       --accept '200..400,429'
                       --exclude '.*(zhihu\.com|xhslink\.com|xiaohongshu\.com|giscus\.app|buttondown\.com).*'
                       'https://jack-liang.com/**'
