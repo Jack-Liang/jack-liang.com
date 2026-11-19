@@ -11,7 +11,7 @@ tags:
   - 命名
   - 可维护性
 draft: false
-isFeatured: true
+isFeatured: false
 seo:
   title: 自我描述的代码：让代码本身就是文档 | 开发第一性原理 10
   description: 文档必然过时，但组织得好的代码不会。命名、包结构、注释做到位，代码自己就是导航。
