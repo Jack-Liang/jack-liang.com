@@ -36,7 +36,7 @@ import Notation from '../../components/Notation.astro';
 
 写代码的主力不是我，是 AI Agent。我几乎没打开过 SE80——Agent 通过一个网关直接在 SAP 系统里搜元数据、写代码、激活、跑测试、查 dump、修 bug，全程自服务。
 
-这个网关就是我之前开源的 **sap-for-agents**（https://github.com/Jack-Liang/sap-for-agents），之前写过一篇《给 SAP 开一扇 HTTP 小门》介绍它的调用能力。这几个月它进化出了一个新形态：<Notation type="underline" color="#ef4444">不只是"让 AI 能调 SAP"，而是"让 AI 能开发 SAP"</Notation>。这篇讲讲它是怎么做到的，以及那个几天做完的项目背后，开发-验证闭环是怎么转起来的。
+这个网关就是我之前开源的 **sap-for-agents**（[https://github.com/Jack-Liang/sap-for-agents](https://github.com/Jack-Liang/sap-for-agents)），之前写过一篇《给 SAP 开一扇 HTTP 小门》介绍它的调用能力。这几个月它进化出了一个新形态：<Notation type="underline" color="#ef4444">不只是"让 AI 能调 SAP"，而是"让 AI 能开发 SAP"</Notation>。这篇讲讲它是怎么做到的，以及那个几天做完的项目背后，开发-验证闭环是怎么转起来的。
 
 # 为什么 AI 之前开发不了 ABAP
 

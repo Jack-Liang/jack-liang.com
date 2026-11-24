@@ -172,4 +172,4 @@ python3 -m sap_indx_decoder scan INDX --limit 100        # 批量 + 成功率报
 
 - [Beyond READ_TEXT: Decoding SAPscript Long Texts with SQLScript](https://community.sap.com/t5/technology-blog-posts-by-members/beyond-read-text-decoding-sapscript-long-texts-stxl-with-sqlscript-in-cds/ba-p/14468331) — STXL 容器/LZH 的先行工作
 - [aamelin1/sap-long-texts](https://github.com/aamelin1/sap-long-texts) — LZH 参考实现（MIT，已原样存档进仓库 `third_party/`）
-- [pysap](https://github.com/pysap/pysap) — SAP 二进制格式的先行者
+- [pysap](https://github.com/OWASP/pysap) — SAP 二进制格式的先行者

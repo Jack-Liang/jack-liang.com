@@ -44,7 +44,7 @@ source_url: https://zhuanlan.zhihu.com/p/2067700342398138329
 
 下面我来分享一下细节。
 
-在我的上一篇文章中，分享过一个把 SAP 的 Function Module 暴露成 RESTful 的项目（[abap_fm_json：通过 HTTP 调用 ABAP 函数模块](/blog/dotABAP-daily-recommendation-abap-fm-json)）。
+在我的上一篇文章中，分享过一个把 SAP 的 Function Module 暴露成 RESTful 的项目（[abap_fm_json：通过 HTTP 调用 ABAP 函数模块](/blog/dotabap-daily-recommendation-abap-fm-json)）。
 
 ![ICF 设置](https://img.jack-liang.com/zhihu/connect-sap-to-agent/p3.jpg)
 
