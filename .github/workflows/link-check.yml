@@ -10,15 +10,22 @@ jobs:
     lychee:
         runs-on: ubuntu-latest
         steps:
+            - uses: actions/checkout@v4
+
             - name: 检查全站外链
               uses: lycheeverse/lychee-action@v2
               with:
+                  # lychee 不爬站：扫描内容源文件，站内相对链接经 --base-url 解析到线上地址检查
                   # 知乎/小红书等平台常拦截无头请求产生误报，跳过；429 限流视为可达
+                  # SAP 试用镜像、旧版下载页已下线，保留作历史记录，不参与检查
                   args: >-
                       --no-progress
                       --max-retries 2
                       --timeout 20
+                      --base-url 'https://jack-liang.com'
                       --accept '200..400,429'
-                      --exclude '.*(zhihu\.com|xhslink\.com|xiaohongshu\.com|giscus\.app|buttondown\.com).*'
-                      'https://jack-liang.com/**'
+                      --exclude '.*(zhihu\.com|xhslink\.com|xiaohongshu\.com|giscus\.app|buttondown\.com|(community|blogs|scn|www|developers)\.sap\.com|blog\.csdn\.net|udemy\.com|docker\.1panel\.live).*'
+                      --exclude '.*(hub\.docker\.com/r/sapse/abap-cloud-developer-trial|1ms\.run/r/sapse/abap-cloud-developer-trial|tools\.hana\.ondemand\.com).*'
+                      'src/content/**/*.md'
+                      'src/content/**/*.mdx'
                   fail: true
