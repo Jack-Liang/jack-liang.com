@@ -2,3 +2,8 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+
+# @astrojs/astro2tsx（astro check 依赖）要求 @emnapi/runtime 与 @emnapi/core 同为 1.x，
+# 否则 peer 会被解析到 2.0.0-beta.2，运行时抛出 "bridge.setLastError is not a function"
+overrides:
+  '@emnapi/runtime': 1.11.3
