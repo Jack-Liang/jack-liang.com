@@ -11,6 +11,7 @@ interface Props {
     className?: string;
     show?: boolean;
     brackets?: string[];
+    multiline?: boolean;
 }
 
 const {
@@ -24,7 +25,8 @@ const {
     iterations = 2,
     className = '',
     show = true,
-    brackets
+    brackets,
+    multiline = false
 } = Astro.props;
 
 const dataOptions = {
@@ -37,24 +39,52 @@ const dataOptions = {
     padding,
     iterations,
     show,
+    multiline,
     ...(brackets && { brackets })
 };
 ---
 
-<span class:list={['notation-target inline-block', className]} data-notation-options={JSON.stringify(dataOptions)}>
+<span class:list={['notation-target', className]} data-notation-options={JSON.stringify(dataOptions)}>
     <slot />
 </span>
 
-<script is:inline>
+<script>
+    interface RoughAnnotationOptions {
+        type?: string;
+        color?: unknown;
+        animate?: boolean;
+        animationDelay?: number;
+        animationDuration?: number;
+        strokeWidth?: number;
+        padding?: number;
+        iterations?: number;
+        show?: boolean;
+        brackets?: string[];
+        multiline?: boolean;
+    }
+
+    interface RoughAnnotation {
+        show(): void;
+        remove(): void;
+    }
+
+    interface RoughNotationApi {
+        annotate(el: Element, options: RoughAnnotationOptions): RoughAnnotation;
+    }
+
     (function () {
         let isLoading = false;
-        let callbacks = [];
+        let callbacks: Array<() => void> = [];
         // element -> annotation instance，保留引用以便布局位移后重绘定位
-        const annotations = new Map();
-        let refreshTimer = null;
+        const annotations = new Map<Element, RoughAnnotation>();
+        let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-        function loadRoughNotation(callback) {
-            if (window.RoughNotation) {
+        function getRoughNotation(): RoughNotationApi | undefined {
+            return (window as typeof window & { RoughNotation?: RoughNotationApi }).RoughNotation;
+        }
+
+        function loadRoughNotation(callback: () => void) {
+            if (getRoughNotation()) {
                 callback();
                 return;
             }
@@ -82,10 +112,12 @@ const dataOptions = {
             document.head.appendChild(script);
         }
 
-        function showAnnotation(el, opts) {
+        function showAnnotation(el: Element, opts: RoughAnnotationOptions) {
             let annotation = annotations.get(el);
             if (!annotation) {
-                annotation = window.RoughNotation.annotate(el, opts);
+                const roughNotation = getRoughNotation();
+                if (!roughNotation) return;
+                annotation = roughNotation.annotate(el, opts);
                 annotations.set(el, annotation);
             }
             if (opts.show) {
@@ -94,10 +126,47 @@ const dataOptions = {
             }
         }
 
+        // color 支持传 CSS 变量（如 var(--notation-yellow)），按当前主题解析成具体颜色
+        function resolveColor(value: unknown): unknown {
+            if (typeof value !== 'string' || !value.startsWith('var(')) return value;
+            const name = value.slice(4, -1).trim();
+            const resolved = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            return resolved || value;
+        }
+
+        // 主题切换后要按新主题重新取色；rough-notation 不支持运行时改色，只能移除重建
+        function rerenderNotations() {
+            document.querySelectorAll<HTMLElement>('.notation-target[data-notation-options][data-notation-initialized]').forEach(function (el) {
+                const annotation = annotations.get(el);
+                if (annotation) annotation.remove();
+                annotations.delete(el);
+                const opts = JSON.parse(el.dataset.notationOptions || '{}') as RoughAnnotationOptions;
+                opts.color = resolveColor(opts.color);
+                opts.animate = false;
+                showAnnotation(el, opts);
+            });
+        }
+
+        let themeObserver: MutationObserver | null = null;
+        let lastDark: boolean | null = null;
+
+        function watchTheme() {
+            if (themeObserver) return;
+            lastDark = document.documentElement.classList.contains('dark');
+            themeObserver = new MutationObserver(function () {
+                const isDark = document.documentElement.classList.contains('dark');
+                if (isDark === lastDark) return;
+                lastDark = isDark;
+                rerenderNotations();
+            });
+            themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        }
+
         function initNotations() {
-            const elements = document.querySelectorAll('.notation-target[data-notation-options]:not([data-notation-initialized])');
+            const elements = document.querySelectorAll<HTMLElement>('.notation-target[data-notation-options]:not([data-notation-initialized])');
             elements.forEach(function (el) {
-                const opts = JSON.parse(el.dataset.notationOptions);
+                const opts = JSON.parse(el.dataset.notationOptions || '{}') as RoughAnnotationOptions;
+                opts.color = resolveColor(opts.color);
                 showAnnotation(el, opts);
                 el.dataset.notationInitialized = 'true';
             });
@@ -109,7 +178,7 @@ const dataOptions = {
             if (refreshTimer) clearTimeout(refreshTimer);
             refreshTimer = setTimeout(function () {
                 refreshTimer = null;
-                document.querySelectorAll('.notation-target[data-notation-options][data-notation-initialized]').forEach(function (el) {
+                document.querySelectorAll<HTMLElement>('.notation-target[data-notation-options][data-notation-initialized]').forEach(function (el) {
                     const annotation = annotations.get(el);
                     if (annotation) annotation.show();
                 });
@@ -117,20 +186,21 @@ const dataOptions = {
         }
 
         // 等布局稳定（字体 + 图片加载完）再首次绘制，避免画在之后会被推移的位置上
-        function whenStable() {
-            const fontsReady = (document.fonts && document.fonts.ready) || Promise.resolve();
-            const imagesReady = new Promise(function (resolve) {
+        function whenStable(): Promise<unknown> {
+            const fontsReady: Promise<unknown> = (document.fonts && document.fonts.ready) || Promise.resolve();
+            const imagesReady = new Promise<void>(function (resolve) {
                 if (document.readyState === 'complete') resolve();
-                else window.addEventListener('load', resolve, { once: true });
+                else window.addEventListener('load', () => resolve(), { once: true });
             });
             // 兜底：不让某个卡住的资源永远阻塞首次绘制
-            const fallback = new Promise(function (resolve) {
+            const fallback = new Promise<void>(function (resolve) {
                 setTimeout(resolve, 1500);
             });
             return Promise.race([Promise.all([fontsReady, imagesReady]), fallback]);
         }
 
         function boot() {
+            watchTheme();
             annotations.clear(); // view transition 切换页面后，元素是全新的
             loadRoughNotation(function () {
                 whenStable().then(initNotations);
@@ -141,7 +211,7 @@ const dataOptions = {
         document.addEventListener(
             'load',
             function (e) {
-                if (e.target && e.target.tagName === 'IMG') refreshNotations();
+                if (e.target instanceof HTMLImageElement) refreshNotations();
             },
             true
         );

@@ -41,6 +41,14 @@
 
 :root {
     color-scheme: light;
+
+    /* Rough Notation 高亮配色（亮色）：浅底色配深色正文 */
+    --notation-yellow: #fef08a;
+    --notation-green: #bbf7d0;
+    --notation-pink: #fbcfe8;
+    --notation-blue: #bfdbfe;
+    --notation-orange: #fed7aa;
+    --notation-red: #ef4444;
 }
 
 .dark {
@@ -71,6 +79,14 @@
     --color-prose-pre-bg: #1e293b;
     --color-prose-th-borders: #475569;
     --color-prose-td-borders: #334155;
+
+    /* Rough Notation 高亮配色（暗色）：用半透明色压住亮度，浅色正文才读得清 */
+    --notation-yellow: rgba(250, 204, 21, 0.26);
+    --notation-green: rgba(74, 222, 128, 0.2);
+    --notation-pink: rgba(244, 114, 182, 0.22);
+    --notation-blue: rgba(96, 165, 250, 0.22);
+    --notation-orange: rgba(251, 146, 60, 0.22);
+    --notation-red: #f87171;
 }
 
 @layer utilities {
