@@ -10,12 +10,13 @@ const primaryNavLinks = siteConfig.primaryNavLinks ?? [];
 // 随机一篇：全站头部入口，链接清单构建时内联
 const randomPostUrls = (await getCollection('blog')).filter(({ data }) => !data.draft).map((post) => `/blog/${post.id}/`);
 
-const { class: className } = Astro.props;
+const { class: className, sticky = false } = Astro.props;
 ---
 
 <header
     class:list={[
-        'flex items-center justify-between gap-6 px-4 py-4 sm:px-8 sm:py-6 bg-slate-50 border-b border-slate-100 dark:bg-slate-800/50 dark:border-slate-700/50',
+        'site-header flex items-center justify-between gap-6 px-4 py-4 sm:px-8 sm:py-6 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 dark:bg-slate-800/90 dark:border-slate-700/50',
+        sticky && 'is-sticky sticky top-0 z-40',
         className
     ]}
 >
@@ -173,8 +174,63 @@ const { class: className } = Astro.props;
     });
 </script>
 
+<script>
+    // 吸顶头部：向下滚动收起让出阅读空间，向上滚动立即回显
+    let lastScrollY = 0;
+    let headerTick = false;
+
+    function getStickyHeader(): HTMLElement | null {
+        return document.querySelector<HTMLElement>('.site-header.is-sticky');
+    }
+
+    function updateHeaderVisibility() {
+        headerTick = false;
+        const header = getStickyHeader();
+        if (!header) return;
+        const y = Math.max(0, window.scrollY);
+        const delta = y - lastScrollY;
+        const menuOpen = !!document.querySelector('.menu.is-visible');
+        // 靠近顶部、菜单展开或向上滚动时显示；向下滚动时收起
+        if (y <= header.offsetHeight || menuOpen || delta < -4) {
+            header.classList.remove('is-hidden');
+        } else if (delta > 4) {
+            header.classList.add('is-hidden');
+        }
+        lastScrollY = y;
+    }
+
+    window.addEventListener(
+        'scroll',
+        () => {
+            if (headerTick) return;
+            headerTick = true;
+            requestAnimationFrame(updateHeaderVisibility);
+        },
+        { passive: true }
+    );
+
+    // 换页后滚动位置归零，确保头部先露出来
+    document.addEventListener('astro:page-load', () => {
+        lastScrollY = Math.max(0, window.scrollY);
+        getStickyHeader()?.classList.remove('is-hidden');
+    });
+</script>
+
 <style>
     @reference "tailwindcss";
+
+    .site-header.is-sticky {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform;
+    }
+    .site-header.is-sticky.is-hidden {
+        transform: translateY(-100%);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .site-header.is-sticky {
+            transition: none;
+        }
+    }
 
     .menu {
         width: calc(100vw - 0.5rem);

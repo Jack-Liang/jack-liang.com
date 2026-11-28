@@ -97,6 +97,11 @@
         @apply text-prose-links underline decoration-1 underline-offset-2 hover:no-underline;
     }
 
+    /* 吸顶头部会盖住锚点目标，目录跳转时留出头部高度 */
+    .prose :where(h1, h2, h3, h4, h5, h6) {
+        scroll-margin-top: 6rem;
+    }
+
     .prose blockquote {
         @apply border-l-primary bg-primary/5 dark:border-l-primary-dark rounded-r-lg border-l-4 py-3 pr-4 pl-5 not-italic;
         quotes: none;
