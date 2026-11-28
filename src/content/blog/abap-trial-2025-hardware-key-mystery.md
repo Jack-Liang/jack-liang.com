@@ -11,7 +11,7 @@ featureImage:
   src: 'https://img.jack-liang.com/00-headImage/pexels_8347499_large2x.jpg'
   alt: '黑暗空间尽头一扇透出光亮的拱门，一个身影站在光前'
 draft: false
-isFeatured: true
+isFeatured: false
 ---
 
 之前写过一篇[能跑在笔记本中的 SAP 系统](/blog/abap-cloud-developer-trial/)，介绍过 SAP 的 ABAP 试用容器：一台笔记本就能跑一套完整的 ABAP Cloud 开发环境（ABAP Stack + HANA），对自学 ABAP Cloud 的人来说是不可替代的玩具。
