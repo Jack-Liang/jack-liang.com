@@ -170,7 +170,9 @@ const seoDescription = '复制 3 行消息发给 Claude、ChatGPT 等 AI 助手�
                     document.body.appendChild(ta);
                     ta.focus();
                     ta.select();
-                    const ok = document.execCommand('copy');
+                    // execCommand 虽已废弃，仍是非安全上下文下唯一可用的复制降级方案
+                    const copyViaCommand = (document as unknown as { execCommand?: (commandId: string) => boolean }).execCommand;
+                    const ok = copyViaCommand ? copyViaCommand.call(document, 'copy') : false;
                     document.body.removeChild(ta);
                     return ok;
                 } catch {

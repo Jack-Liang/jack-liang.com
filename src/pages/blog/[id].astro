@@ -375,8 +375,10 @@ const jsonLd = {
                 document.body.appendChild(ta);
                 ta.select();
                 let ok = false;
+                // execCommand 虽已废弃，仍是非安全上下文下唯一可用的复制降级方案
+                const copyViaCommand = (document as unknown as { execCommand?: (commandId: string) => boolean }).execCommand;
                 try {
-                    ok = document.execCommand('copy');
+                    ok = copyViaCommand ? copyViaCommand.call(document, 'copy') : false;
                 } catch {
                     ok = false;
                 }
