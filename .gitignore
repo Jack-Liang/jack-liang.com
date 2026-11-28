@@ -23,3 +23,6 @@ pnpm-debug.log*
 # Cloudflare Wrangler cache
 .wrangler/
 .cache/
+
+# 竖版分享图只在本地生成，不入库也不参与构建
+og/*-vertical.png
